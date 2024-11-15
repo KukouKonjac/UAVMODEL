@@ -1,0 +1,7 @@
+/build/
+/out/
+/bin/
+/data/
+/.vs/
+/.cache/
+*/CMakeSettings.json
