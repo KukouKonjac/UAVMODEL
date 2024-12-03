@@ -2,9 +2,9 @@
 
 #include "../ammunition/ammunitionfactory.hpp"
 #include "../tools/constant.hpp"
-#include "cardamage.h"
+#include "uavdamage.h"
 
-namespace carphymodel {
+namespace uavmodel {
 
 void DamageSystem::tick(double dt, Components &c) {
     auto& hitEventQueue = c.getSpecificSingleton<HitEventQueue>().value();
@@ -36,4 +36,4 @@ void DamageSystem::tick(double dt, Components &c) {
     return;
 }
 
-} // namespace carphymodel
+} // namespace uavmodel

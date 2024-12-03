@@ -2,23 +2,23 @@
 
 #include <string>
 #include <fstream>
-#include "carmodel.hpp"
+#include "uavmodel.hpp"
 
-namespace carphymodel{
+namespace uavmodel{
 
-class CarBuilder{
+class UavBuilder{
 public:
     //! build model from XML file
     //! @param srcXML string of content of XML file
     //! @param model target empty model to build
     //! @return none.
-    static void buildFromSource(const std::string& srcXML, CarModel& model, bool check=false);
+    static void buildFromSource(const std::string& srcXML, UavModel& model, bool check=false);
 
     //! build model from XML file
     //! @param XMLFilePath string of path of XML file
     //! @param model target empty model to build
     //! @return none.
-    static void buildFromFile(const std::string& XMLFilePath, CarModel& model, bool check=false){
+    static void buildFromFile(const std::string& XMLFilePath, UavModel& model, bool check=false){
         using namespace std;
         std::ifstream file(XMLFilePath);
         std::string buffer;    

@@ -12,14 +12,14 @@ std::ostream& operator<<(std::ostream& o, const EntityInfo& e) {
 
 int main() {
     using namespace std;
-    using carphymodel::Vector3;
-    carphymodel::CarModel model;
-    buildBaseModel(model);
+    using uavmodel::Vector3;
+    uavmodel::UavModel model;
+    buildBaseModel(" ", model);
 
     Coordinate self{};
     EntityInfo e{.position = {1000, 0, 0},
                  .velocity = {0, 0, 0},
-                 .baseInfo = {BaseInfo::ENTITY_TYPE::CAR, 1, 1, DAMAGE_LEVEL::N}};
+                 .baseInfo = {BaseInfo::ENTITY_TYPE::UAV, 1, 1, DAMAGE_LEVEL::N}};
     SensorData sensor{};
     Hull hull{};
     double jammerPower = 10; // 0;
@@ -39,7 +39,7 @@ int main() {
 
     for (auto&& tar : target) {
         e.position = tar;
-        bool env = carphymodel::EnvironmentInfoAgent{}.getIntervisibility(tar, Vector3{0, 0, 0});
+        bool env = uavmodel::EnvironmentInfoAgent{}.getIntervisibility(tar, Vector3{0, 0, 0});
         cout << std::format("({}, {}, {}, {}),", tar.x, tar.y, int(env && radar.isDetectable(self, e, sensor, hull, 0)),
                             int(env && radar.isDetectable(self, e, sensor, hull, jammerPower)))
              << endl;

@@ -2,7 +2,7 @@
 
 #include "../communication.hpp"
 
-namespace carphymodel{
+namespace uavmodel{
 
 class MyAntenna : public Communication{
 public:

@@ -19,30 +19,30 @@ int main() {
     if (testmode == 1)//测试射击精度----------------------------------测试时注释掉cardamage.cpp文件中的clear
     {
         for (int i = 0; i < x; ++i) {
-            carphymodel::CarModel model;
-            buildBaseModel(model);
-            get<1>((*(model.components.getSpecificSingleton<carphymodel::ScannedMemory>()))[1]) =
-                carphymodel::EntityInfo{.position = {pos_x, 0, 0},
+            uavmodel::UavModel model;
+            buildBaseModel(" ", model);
+            get<1>((*(model.components.getSpecificSingleton<uavmodel::ScannedMemory>()))[1]) =
+                uavmodel::EntityInfo{.position = {pos_x, 0, 0},
                            .velocity = {v_x, 0, 0},
-                           .baseInfo = {carphymodel::BaseInfo::ENTITY_TYPE::CAR, 1, 1, DAMAGE_LEVEL::N}};
-            auto& buffer = model.components.getSpecificSingleton<carphymodel::CommandBuffer>().value();
-            buffer.emplace(static_cast<carphymodel::command::COMMAND_TYPE>(11), any(tuple<double, double>(0, 1)));
+                           .baseInfo = {uavmodel::BaseInfo::ENTITY_TYPE::UAV, 1, 1, DAMAGE_LEVEL::N}};
+            auto& buffer = model.components.getSpecificSingleton<uavmodel::CommandBuffer>().value();
+            buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(11), any(tuple<double, double>(0, 1)));
 
             model.tick(0.05);
             // model.tick(0.1);
 
-            carphymodel::FireEvent tmp;
-            auto& buffer2 = model.components.getSpecificSingleton<carphymodel::EventBuffer>().value();
+            uavmodel::FireEvent tmp;
+            auto& buffer2 = model.components.getSpecificSingleton<uavmodel::EventBuffer>().value();
             if (auto it = buffer2.find(string("FireDataOut")); it != buffer2.end()) {
-                tmp = any_cast<carphymodel::FireEvent>(it->second);
-                /*std::cout << format("carphymodel send fireEvent: {{weapon: {}, from: {}({}, {}, {}), to: ({}, {},
+                tmp = any_cast<uavmodel::FireEvent>(it->second);
+                /*std::cout << format("uavmodel send fireEvent: {{weapon: {}, from: {}({}, {}, {}), to: ({}, {},
                    {})}}", tmp.weaponName, 0, tmp.position.x, tmp.position.y, tmp.position.z, tmp.target.x,
                                tmp.target.y, tmp.target.z) << endl
                      << "是否首发：1为首发，0为非首发： " << tmp.isFirst << endl;*/
             }
-            model.components.getSpecificSingleton<carphymodel::FireEventQueue>()->push_back(tmp);
-            model.components.getSpecificSingleton<carphymodel::Coordinate>().value().position = {pos_x, 0, 0};
-            model.components.getSpecificSingleton<carphymodel::Hull>().value().velocity = {v_x, 0, 0};
+            model.components.getSpecificSingleton<uavmodel::FireEventQueue>()->push_back(tmp);
+            model.components.getSpecificSingleton<uavmodel::Coordinate>().value().position = {pos_x, 0, 0};
+            model.components.getSpecificSingleton<uavmodel::Hull>().value().velocity = {v_x, 0, 0};
             model.tick(0.05);
 
             n += model.components.getSpecificSingleton<HitEventQueue>().value().size();
@@ -50,15 +50,15 @@ int main() {
         std::cout << "firsthit rate: " << n / x << endl;
     } else if (testmode == 2) {
         // 测试弹药量---------------------------------测试时精度配置为无偏差
-        carphymodel::CarModel model;
-        buildBaseModel(model);
+        uavmodel::UavModel model;
+        buildBaseModel(" ", model);
         for (int i = 0; i < 50; ++i) {
-            get<1>((*(model.components.getSpecificSingleton<carphymodel::ScannedMemory>()))[1]) =
-                carphymodel::EntityInfo{.position = {pos_x, 0, 5},
+            get<1>((*(model.components.getSpecificSingleton<uavmodel::ScannedMemory>()))[1]) =
+                uavmodel::EntityInfo{.position = {pos_x, 0, 5},
                            .velocity = {0, 0, 0},
-                           .baseInfo = {carphymodel::BaseInfo::ENTITY_TYPE::CAR, 1, 1, DAMAGE_LEVEL::N}};
-            auto& buffer = model.components.getSpecificSingleton<carphymodel::CommandBuffer>().value();
-            buffer.emplace(static_cast<carphymodel::command::COMMAND_TYPE>(10), any(tuple<double, double>(0, 1)));
+                           .baseInfo = {uavmodel::BaseInfo::ENTITY_TYPE::UAV, 1, 1, DAMAGE_LEVEL::N}};
+            auto& buffer = model.components.getSpecificSingleton<uavmodel::CommandBuffer>().value();
+            buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(10), any(tuple<double, double>(0, 1)));
             model.tick(0.05);
             cout << "ammoremainnum: " << get<1>(*model.components.getNormal<FireUnit>().begin()).weapon.ammoRemain
                  << endl;
@@ -68,30 +68,30 @@ int main() {
         // 测试主动防护拦截概率-----------------------------
 
         for (int i = 0; i < x; ++i) {
-            carphymodel::CarModel model;
-            buildBaseModel(model);
-            get<1>((*(model.components.getSpecificSingleton<carphymodel::ScannedMemory>()))[1]) =
-                carphymodel::EntityInfo{.position = {pos_x, 0, 5},
+            uavmodel::UavModel model;
+            buildBaseModel(" ", model);
+            get<1>((*(model.components.getSpecificSingleton<uavmodel::ScannedMemory>()))[1]) =
+                uavmodel::EntityInfo{.position = {pos_x, 0, 5},
                            .velocity = {v_x, 0, 0},
-                           .baseInfo = {carphymodel::BaseInfo::ENTITY_TYPE::CAR, 1, 1, DAMAGE_LEVEL::N}};
-            auto& buffer = model.components.getSpecificSingleton<carphymodel::CommandBuffer>().value();
-            buffer.emplace(static_cast<carphymodel::command::COMMAND_TYPE>(10), any(tuple<double, double>(0, 1)));
+                           .baseInfo = {uavmodel::BaseInfo::ENTITY_TYPE::UAV, 1, 1, DAMAGE_LEVEL::N}};
+            auto& buffer = model.components.getSpecificSingleton<uavmodel::CommandBuffer>().value();
+            buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(10), any(tuple<double, double>(0, 1)));
 
             model.tick(0.05);
             // model.tick(0.1);
 
-            carphymodel::FireEvent tmp;
-            auto& buffer2 = model.components.getSpecificSingleton<carphymodel::EventBuffer>().value();
+            uavmodel::FireEvent tmp;
+            auto& buffer2 = model.components.getSpecificSingleton<uavmodel::EventBuffer>().value();
             if (auto it = buffer2.find(string("FireDataOut")); it != buffer2.end()) {
-                tmp = any_cast<carphymodel::FireEvent>(it->second);
-                /*std::cout << format("carphymodel send fireEvent: {{weapon: {}, from: {}({}, {}, {}), to: ({}, {},
+                tmp = any_cast<uavmodel::FireEvent>(it->second);
+                /*std::cout << format("uavmodel send fireEvent: {{weapon: {}, from: {}({}, {}, {}), to: ({}, {},
                    {})}}", tmp.weaponName, 0, tmp.position.x, tmp.position.y, tmp.position.z, tmp.target.x,
                                tmp.target.y, tmp.target.z) << endl
                      << "是否首发：1为首发，0为非首发： " << tmp.isFirst << endl;*/
             }
-            model.components.getSpecificSingleton<carphymodel::FireEventQueue>()->push_back(tmp);
-            model.components.getSpecificSingleton<carphymodel::Coordinate>().value().position = {pos_x, 0, 5};
-            model.components.getSpecificSingleton<carphymodel::Hull>().value().velocity = {v_x, 0, 0};
+            model.components.getSpecificSingleton<uavmodel::FireEventQueue>()->push_back(tmp);
+            model.components.getSpecificSingleton<uavmodel::Coordinate>().value().position = {pos_x, 0, 5};
+            model.components.getSpecificSingleton<uavmodel::Hull>().value().velocity = {v_x, 0, 0};
             model.tick(0.05);
 
             n += model.components.getSpecificSingleton<HitEventQueue>().value().size();
@@ -112,23 +112,23 @@ int main() {
         std::cout << "success rate: " << success / (success + fail) << endl;
     } else if (testmode == 4) // 测试射界、调炮速度，打击时俯仰角负为打高的地方。运动时俯仰角负为下坡。
     {
-        carphymodel::CarModel model;
-        buildBaseModel(model);
+        uavmodel::UavModel model;
+        buildBaseModel(" ", model);
         double theta = PI/2;
         double theta1 = atan2(-180, 500);
         int i;
         for (i = 0; i < 200; ++i) {
-            get<1>((*(model.components.getSpecificSingleton<carphymodel::ScannedMemory>()))[1]) =
-                carphymodel::EntityInfo{.position = {500 * cos(theta), 500 * sin(theta), -6},//修改z值测试俯仰射界
+            get<1>((*(model.components.getSpecificSingleton<uavmodel::ScannedMemory>()))[1]) =
+                uavmodel::EntityInfo{.position = {500 * cos(theta), 500 * sin(theta), -6},//修改z值测试俯仰射界
                            .velocity = {0, 0, 0},
-                           .baseInfo = {carphymodel::BaseInfo::ENTITY_TYPE::CAR, 1, 1, DAMAGE_LEVEL::N}};
+                           .baseInfo = {uavmodel::BaseInfo::ENTITY_TYPE::UAV, 1, 1, DAMAGE_LEVEL::N}};
             if (abs(get<1>(*model.components.getNormal<FireUnit>().begin()).presentDirection.yaw - theta) <= 0.001)
             {
                 cout << "rotate finished! rotate speed: " << theta * 180 / PI / (i * 0.1) << "°/s" << endl;
                 break;
             }
-            auto& buffer = model.components.getSpecificSingleton<carphymodel::CommandBuffer>().value();
-            buffer.emplace(static_cast<carphymodel::command::COMMAND_TYPE>(10), any(tuple<double, double>(0, 1)));
+            auto& buffer = model.components.getSpecificSingleton<uavmodel::CommandBuffer>().value();
+            buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(10), any(tuple<double, double>(0, 1)));
             model.tick(0.1);
             cout << "current weapon yaw: "
                  << get<1>(*model.components.getNormal<FireUnit>().begin()).presentDirection.yaw
@@ -142,21 +142,21 @@ int main() {
     }
     else if (testmode == 5) // 测试射程-----------------------------------把探测距离修改超过射程
     {
-        carphymodel::CarModel model;
-        buildBaseModel(model);
+        uavmodel::UavModel model;
+        buildBaseModel(" ", model);
         for (int i = 30; i < 200; ++i) {
-            get<1>((*(model.components.getSpecificSingleton<carphymodel::ScannedMemory>()))[1]) =
-                carphymodel::EntityInfo{.position = {100.0 * i, 0, -1}, // 修改z值测试俯仰射界
+            get<1>((*(model.components.getSpecificSingleton<uavmodel::ScannedMemory>()))[1]) =
+                uavmodel::EntityInfo{.position = {100.0 * i, 0, -1}, // 修改z值测试俯仰射界
                            .velocity = {0, 0, 0},
-                           .baseInfo = {carphymodel::BaseInfo::ENTITY_TYPE::CAR, 1, 1, DAMAGE_LEVEL::N}};
-            auto& buffer = model.components.getSpecificSingleton<carphymodel::CommandBuffer>().value();
-            buffer.emplace(static_cast<carphymodel::command::COMMAND_TYPE>(10), any(tuple<double, double>(0, 1)));
+                           .baseInfo = {uavmodel::BaseInfo::ENTITY_TYPE::UAV, 1, 1, DAMAGE_LEVEL::N}};
+            auto& buffer = model.components.getSpecificSingleton<uavmodel::CommandBuffer>().value();
+            buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(10), any(tuple<double, double>(0, 1)));
             model.tick(0.05);
-            carphymodel::FireEvent tmp;
-            auto& buffer2 = model.components.getSpecificSingleton<carphymodel::EventBuffer>().value();
+            uavmodel::FireEvent tmp;
+            auto& buffer2 = model.components.getSpecificSingleton<uavmodel::EventBuffer>().value();
             if (auto it = buffer2.find(string("FireDataOut")); it != buffer2.end()) {
-                tmp = any_cast<carphymodel::FireEvent>(it->second);
-                cout << format("carphymodel send fireEvent: {{weapon: {}, from: {}({}, {}, {}), to: ({}, {}, {})}}",
+                tmp = any_cast<uavmodel::FireEvent>(it->second);
+                cout << format("uavmodel send fireEvent: {{weapon: {}, from: {}({}, {}, {}), to: ({}, {}, {})}}",
                                tmp.weaponName, 0, tmp.position.x, tmp.position.y, tmp.position.z, tmp.target.x,
                                tmp.target.y, tmp.target.z) << endl;
             }
@@ -171,25 +171,25 @@ int main() {
     {
         //测试威力--------------------------
         for (int i = 0; i < x; ++i) {
-            carphymodel::CarModel model;
-            buildBaseModel(model);
-            get<1>((*(model.components.getSpecificSingleton<carphymodel::ScannedMemory>()))[1]) =
-                carphymodel::EntityInfo{.position = {pos_x, 0, -1},
+            uavmodel::UavModel model;
+            buildBaseModel(" ", model);
+            get<1>((*(model.components.getSpecificSingleton<uavmodel::ScannedMemory>()))[1]) =
+                uavmodel::EntityInfo{.position = {pos_x, 0, -1},
                            .velocity = {v_x, 0, 0},
-                           .baseInfo = {carphymodel::BaseInfo::ENTITY_TYPE::CAR, 1, 1, DAMAGE_LEVEL::N}};
-            auto& buffer = model.components.getSpecificSingleton<carphymodel::CommandBuffer>().value();
-            buffer.emplace(static_cast<carphymodel::command::COMMAND_TYPE>(10), any(tuple<double, double>(0, 1)));
+                           .baseInfo = {uavmodel::BaseInfo::ENTITY_TYPE::UAV, 1, 1, DAMAGE_LEVEL::N}};
+            auto& buffer = model.components.getSpecificSingleton<uavmodel::CommandBuffer>().value();
+            buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(10), any(tuple<double, double>(0, 1)));
             model.tick(0.05);//产生开火事件
             // model.tick(0.1);
 
-            carphymodel::FireEvent tmp;
-            auto& buffer2 = model.components.getSpecificSingleton<carphymodel::EventBuffer>().value();
+            uavmodel::FireEvent tmp;
+            auto& buffer2 = model.components.getSpecificSingleton<uavmodel::EventBuffer>().value();
             if (auto it = buffer2.find(string("FireDataOut")); it != buffer2.end()) {
-                tmp = any_cast<carphymodel::FireEvent>(it->second);
+                tmp = any_cast<uavmodel::FireEvent>(it->second);
             }
-            model.components.getSpecificSingleton<carphymodel::FireEventQueue>()->push_back(tmp);
-            model.components.getSpecificSingleton<carphymodel::Coordinate>().value().position = {pos_x, 0, 0};
-            model.components.getSpecificSingleton<carphymodel::Hull>().value().velocity = {v_x, 0, 0};
+            model.components.getSpecificSingleton<uavmodel::FireEventQueue>()->push_back(tmp);
+            model.components.getSpecificSingleton<uavmodel::Coordinate>().value().position = {pos_x, 0, 0};
+            model.components.getSpecificSingleton<uavmodel::Hull>().value().velocity = {v_x, 0, 0};
             model.tick(0.05);//解算毁伤
         }
     }

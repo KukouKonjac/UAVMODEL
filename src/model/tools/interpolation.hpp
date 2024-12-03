@@ -2,7 +2,7 @@
 
 #include <array>
 
-namespace carphymodel{
+namespace uavmodel{
 
 template<typename Con>
 struct LinearCombinationView{

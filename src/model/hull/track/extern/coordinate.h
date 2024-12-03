@@ -6,7 +6,7 @@
 
 namespace externModel::track{
 
-using Coordinate = carphymodel::Coordinate;
+using Coordinate = uavmodel::Coordinate;
 
 }
 

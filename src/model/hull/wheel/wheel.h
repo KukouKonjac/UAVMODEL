@@ -4,7 +4,7 @@
 #include "../../tools/datastructure.hpp"
 #include "../../environment.h"
 
-namespace carphymodel{
+namespace uavmodel{
 
 // 轮式车辆运动系统
 class WheelMoveSystem{

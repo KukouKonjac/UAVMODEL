@@ -1,6 +1,6 @@
 #pragma once
 
-namespace carphymodel {
+namespace uavmodel {
 
 struct DoJobOnConstruct{
     template<typename Job, typename ...Params>

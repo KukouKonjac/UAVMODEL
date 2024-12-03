@@ -3,7 +3,7 @@
 #include <cmath>
 // #include <iostream>
 
-namespace carphymodel{
+namespace uavmodel{
 
 //三维向量
 struct /* alignas(sizeof(double) * 4) */ Vector3{

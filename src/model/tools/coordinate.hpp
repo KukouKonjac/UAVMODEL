@@ -2,7 +2,7 @@
 
 #include "vector3.hpp"
 
-namespace carphymodel{
+namespace uavmodel{
 
 struct Coordinate{
     // 本坐标系原点在基坐标系中的位置

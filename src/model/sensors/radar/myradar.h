@@ -6,7 +6,7 @@
 #include <memory>
 //include <iostream>
 
-namespace carphymodel{
+namespace uavmodel{
 
 class MyRadar final : public Sensor {
 public:

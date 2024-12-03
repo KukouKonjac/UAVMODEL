@@ -6,7 +6,7 @@
 #include "../framework/system.hpp"
 #include "../tools/myrandom.hpp"
 
-namespace carphymodel{
+namespace uavmodel{
 
 class HitSystem : public System{
 public:
@@ -44,7 +44,7 @@ public:
                 double firstrate = tmprate + _fireEvent.isFirst * 0.1 + (tmpdis - _fireEvent.range) / tmpdis;
                 if (firstrate < 0.1) firstrate = 0.1;
                 if (firstrate > 0.9) firstrate = 0.9;
-                if (carphymodel::rand() > firstrate) break;
+                if (uavmodel::rand() > firstrate) break;
             }
             if (_fireEvent.weaponName == "verticalmissile")
             {
@@ -55,7 +55,7 @@ public:
                     firstrate = 0.1;
                 if (firstrate > 0.9)
                     firstrate = 0.9;
-                if (carphymodel::rand() > firstrate)
+                if (uavmodel::rand() > firstrate)
                     break;
             }
 

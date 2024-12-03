@@ -2,7 +2,7 @@
 #include "extern/Comm.h"
 #include "../../tools/initjob.hpp"
 
-namespace carphymodel{
+namespace uavmodel{
 
 bool MyAntenna::sendMessage(const Vector3& self, const Vector3& target){
     using namespace externModel::comm;

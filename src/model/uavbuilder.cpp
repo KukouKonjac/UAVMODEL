@@ -1,7 +1,7 @@
 ﻿#include <algorithm>
 #include <array>
 
-#include "carbuilder.h"
+#include "uavbuilder.h"
 
 #include "framework/component.hpp"
 #include "src/extern/rapidxml-1.13/rapidxml.hpp"
@@ -9,11 +9,11 @@
 #include "tools/myassert.hpp"
 #include "tools/seterror.hpp"
 
-#include "damage/cardamage.h"
-#include "firecontrolsystem/carfcs.hpp"
-#include "hull/carhull.h"
-#include "protection/carprotection.h"
-#include "sensors/carsensor.h"
+#include "damage/uavdamage.h"
+#include "firecontrolsystem/uavfcs.hpp"
+#include "hull/uavhull.h"
+#include "protection/uavprotection.h"
+#include "sensors/uavsensor.h"
 #include "toolsystem/ballisticsystem.hpp"
 #include "toolsystem/hitsystem.hpp"
 
@@ -21,9 +21,9 @@ namespace {
 
 using namespace rapidxml;
 using namespace std;
-using namespace carphymodel;
-using namespace carphymodel::component;
-using namespace carphymodel::mymeta;
+using namespace uavmodel;
+using namespace uavmodel::component;
+using namespace uavmodel::mymeta;
 
 template <typename... Ty>
 struct NameTable {
@@ -62,7 +62,7 @@ struct loadComponent;
 
 template <typename... Ty>
 struct loadComponent<NormalComponent<Ty...>> {
-    static void load(size_t ID, rapidxml::xml_node<char>* component, carphymodel::Components::Modifier& handle) {
+    static void load(size_t ID, rapidxml::xml_node<char>* component, uavmodel::Components::Modifier& handle) {
         bool match = (... || [&]() {
             // TODO: use set instead?
             if (component->name() == nameTable.getName<Ty>()) {
@@ -77,7 +77,7 @@ struct loadComponent<NormalComponent<Ty...>> {
 
 template <typename... Ty>
 struct loadComponent<SingletonComponent<Ty...>> {
-    static void load(rapidxml::xml_node<char>* root, carphymodel::Components::Modifier& handle) {
+    static void load(rapidxml::xml_node<char>* root, uavmodel::Components::Modifier& handle) {
         int tmp[] = {[&]() {
             if (auto p = root->first_node(nameTable.getName<Ty>().data(), nameTable.getName<Ty>().size()); p != 0) {
                 handle.addSingletonComponents<Ty>(componentDeserialize<Ty>(p));//反序列化
@@ -146,7 +146,7 @@ struct RestrictionList {
 };
 
 void checkRestriction(Components& c) {
-    using namespace carphymodel;
+    using namespace uavmodel;
     static RestrictionList<
         Restriction<Block, Coordinate>,
         Restriction<ProtectionModel, Block>, 
@@ -162,12 +162,12 @@ void checkRestriction(Components& c) {
 
 } // namespace
 
-namespace carphymodel {
+namespace uavmodel {
 
-void CarBuilder::buildFromSource(const std::string& srcXML, CarModel& model, bool check) {
+void UavBuilder::buildFromSource(const std::string& srcXML, UavModel& model, bool check) {
     static struct InitJob{
         InitJob() { 
-            auto& system = CarModel::systems;
+            auto& system = UavModel::systems;
             system.push_back(std::make_unique<PrepareSystem>());
 
             system.push_back(std::make_unique<SensorSystem>());
@@ -188,7 +188,7 @@ void CarBuilder::buildFromSource(const std::string& srcXML, CarModel& model, boo
     xml_document<> doc;
     CStyleString s(srcXML);
     doc.parse<parse_default>(s.s);
-    auto root = doc.first_node("car");
+    auto root = doc.first_node("uav");
 
     if (auto handle = model.components.getModifier()) {
         handle.addSingletonComponents<CommandBuffer, EventBuffer, DamageModel, Coordinate, HitEventQueue,

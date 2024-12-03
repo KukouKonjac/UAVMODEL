@@ -2,7 +2,7 @@
 
 #include <random>
 
-namespace carphymodel {
+namespace uavmodel {
 
 inline bool testRandom(double prob) {
     static auto seed = std::chrono::system_clock::now().time_since_epoch().count();
@@ -11,4 +11,4 @@ inline bool testRandom(double prob) {
     return u(e) < prob;
 }
 
-} // namespace carphymodel
+} // namespace uavmodel

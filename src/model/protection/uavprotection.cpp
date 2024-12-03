@@ -1,8 +1,8 @@
-#include "carprotection.h"
+#include "uavprotection.h"
 
 namespace {}
 
-namespace carphymodel{
+namespace uavmodel{
 
 void ProtectionSystem::tick(double dt, Components& c){
     // auto queue = c.getSpecificSingleton<HitEventQueue>().value();

@@ -15,7 +15,7 @@
 #include "constant.hpp"
 #include "vector3.hpp"
 
-namespace carphymodel {
+namespace uavmodel {
 
 namespace command {
 
@@ -120,7 +120,7 @@ struct ProtectionModel {
     static ProtectionModel make(){return ProtectionModel{};}
 };
 
-// carhull
+// hull
 struct Hull {
     Vector3 velocity;
     Vector3 palstance;
@@ -252,7 +252,7 @@ struct CommunicationData {
 struct BaseInfo {
     constexpr static const char *token_list[] = {"type", "id", "side", "damageLevel", "jammer", "hidden", "active_interference_rate", "active_interference_distance"};
     enum class ENTITY_TYPE {
-        CAR,
+        UAV,
         UNKNOWN = -1,
     } type;
     VID id;
@@ -326,7 +326,40 @@ struct WheelMotionParamList {
         return tmp;
     }
 };
-
+struct QuadrotorMotionParamList {
+    constexpr static const char* token_list[] = {"-angle", "LENGTH", "MAX_ANGLE", "ROTATE_SPEED", "MAX_LINEAR_SPEED",
+                                                 "MAX_FRONT_ACCELERATION", "MAX_BRAKE_ACCELERATION",
+                                                 "MAX_LATERAL_ACCELERATION",
+                                                 // below add by wsb
+                                                 "ELECTRICITY_REMAIN", "ELECTRICITY_CONSUMPTION", "CHARGING_TIME"};
+    // 车轮转角，右为正
+    double angle;
+    // 前后轴距
+    double LENGTH;
+    // 前轮最大转角约束
+    double MAX_ANGLE;
+    // 车轮转动速度约束
+    double ROTATE_SPEED;
+    // 最大直线速度约束
+    double MAX_LINEAR_SPEED;
+    // 最大前向加速度约束
+    double MAX_FRONT_ACCELERATION;
+    // 最大减速加速度约束
+    double MAX_BRAKE_ACCELERATION;
+    // 最大转弯向心加速度(侧向加速度)约束
+    double MAX_LATERAL_ACCELERATION;
+    // 剩余油量
+    double OIL_REMAIN;
+    // 油耗,百公里耗油量
+    double OIL_CONSUMPTION;
+    // 最大爬坡加速度约束
+    double MAX_CLIMBING_ACCELERATION;
+    static WheelMotionParamList make() {
+        WheelMotionParamList tmp;
+        tmp.angle = 0;
+        return tmp;
+    }
+};
 struct HitEventQueue : public std::vector<FireEvent> {};
 
 struct FireEventQueue : public std::vector<FireEvent> {};
@@ -346,4 +379,4 @@ using Components =
                        WheelMotionParamList, ScannedMemory, Sphere, Hull, SID, VID, PathPlanningModel, SystemScannedMemory, SystemScannedMemoryget>,
     NormalComponent<Coordinate, DamageModel, Block, ProtectionModel, FireUnit, SensorData, CommunicationData>>;
 
-}; // namespace carphymodel
+}; // namespace uavmodel

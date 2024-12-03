@@ -7,10 +7,10 @@
 namespace wsfplugin {
 
 constexpr inline double rate = 111000.;
-carphymodel::Vector3 locationTrans(double baseLongitude, double baseLatitude, double longitude, double latitude, double altitude) {
+uavmodel::Vector3 locationTrans(double baseLongitude, double baseLatitude, double longitude, double latitude, double altitude) {
     return {
         rate * (latitude - baseLatitude),
-        rate * (longitude - baseLongitude) * cos(carphymodel::DEG2RAD(baseLatitude)),
+        rate * (longitude - baseLongitude) * cos(uavmodel::DEG2RAD(baseLatitude)),
         -altitude,
     };
 }
@@ -56,7 +56,7 @@ void testmain() {
         wangshuaibo.getRoute({-54900, 54000, 0}, {-49000, 54500, 0});*/
 
     //路径规划测试---------------------------
-    /*std::vector<carphymodel::Vector3> pathroad = wangshuaibo.getRoute({-52500, 54000, 0}, {-50000, 54800, 0});
+    /*std::vector<uavmodel::Vector3> pathroad = wangshuaibo.getRoute({-52500, 54000, 0}, {-50000, 54800, 0});
 
     std::ofstream outputFile("path_output_road.txt", std::ios::out);
     if (outputFile.is_open()) {
@@ -72,33 +72,33 @@ void testmain() {
 
     //平均速度测试---------------------------
     //using namespace std;
-    //carphymodel::CarModel model;
+    //uavmodel::CarModel model;
     //buildBaseModel(model);
-    //auto& damage = model.components.getSpecificSingleton<carphymodel::DamageModel>().value();
-    //auto& buffer = model.components.getSpecificSingleton<carphymodel::CommandBuffer>().value();
+    //auto& damage = model.components.getSpecificSingleton<uavmodel::DamageModel>().value();
+    //auto& buffer = model.components.getSpecificSingleton<uavmodel::CommandBuffer>().value();
 
     //auto env = std::make_unique<wsfplugin::WSFEnvironment>();
     //auto filePath = "D:/codeproject/simplecq-master/config/zjc_wsb_demo.tif";
     //env->init(filePath, 106.747741224040951, 36.92016763212966);
-    //carphymodel::EnvironmentInfoAgent::changeEnvironmentSupplier(std::move(env));
+    //uavmodel::EnvironmentInfoAgent::changeEnvironmentSupplier(std::move(env));
     //model.tick(0.1);
-    ////carphymodel::Vector3 pos_start = model.components.getSpecificSingleton<carphymodel::Coordinate>().value().position;
+    ////uavmodel::Vector3 pos_start = model.components.getSpecificSingleton<uavmodel::Coordinate>().value().position;
     //double tmpdis = 0;
     //int count = 8000;
     //double dt = 0.1;
     //for (int i = 0; i < count; ++i) {
-    //    buffer.emplace(static_cast<carphymodel::command::COMMAND_TYPE>(2), any(tuple<double, double>(13.89, 0)));
+    //    buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(2), any(tuple<double, double>(13.89, 0)));
     //    if (i > 3000)
     //    tmpdis += (model.components.getSpecificSingleton<Hull>().value().velocity * dt).norm();
     //    model.tick(dt);
-    //    auto attitude = carphymodel::Quaternion::fromCompressedQuaternion(
-    //                        model.components.getSpecificSingleton<carphymodel::Coordinate>().value().attitude)
+    //    auto attitude = uavmodel::Quaternion::fromCompressedQuaternion(
+    //                        model.components.getSpecificSingleton<uavmodel::Coordinate>().value().attitude)
     //                        .getEuler();
-    //    cout << "roll: " << carphymodel::RAD2DEG(attitude.x) << " pitch: " << carphymodel::RAD2DEG(attitude.y)
-    //         << " vel: " << model.components.getSpecificSingleton<carphymodel::Hull>().value().velocity.norm() << "m/s" <<  endl
+    //    cout << "roll: " << uavmodel::RAD2DEG(attitude.x) << " pitch: " << uavmodel::RAD2DEG(attitude.y)
+    //         << " vel: " << model.components.getSpecificSingleton<uavmodel::Hull>().value().velocity.norm() << "m/s" <<  endl
     //        /*<< "longitude: " << */;
     //}
-    ////auto pos_finish = model.components.getSpecificSingleton<carphymodel::Coordinate>().value().position;
+    ////auto pos_finish = model.components.getSpecificSingleton<uavmodel::Coordinate>().value().position;
     //cout << "average speed: " << tmpdis / ((count - 3000) * dt) * 3.6 << "km/h" << endl;
 
 }

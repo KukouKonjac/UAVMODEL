@@ -1,4 +1,4 @@
-#include "carsensor.h"
+#include "uavsensor.h"
 
 #include <algorithm>
 #include <tuple>
@@ -10,9 +10,9 @@ namespace{
 
 };
 
-namespace carphymodel{
+namespace uavmodel{
 
-using namespace carphymodel::command;
+using namespace uavmodel::command;
 
 void SensorSystem::tick(double dt, Components& c)
 {
@@ -58,7 +58,7 @@ void SensorSystem::tick(double dt, Components& c)
             double distance = (baseCoordinate.position - std::get<1>(_entityInfo).position).norm();
             double maxDeviation = bestSensor.target_positioning_accuracy * distance / bestSensor.detectrange;
                 //std::min(bestSensor.target_positioning_accuracy * bestSensor.detectrange / distance,bestSensor.detectrange - distance);
-            double angle = carphymodel::rand() * 2 * PI;
+            double angle = uavmodel::rand() * 2 * PI;
             std::get<1>(mem[vid]).position.x += maxDeviation * std::cos(angle);
             std::get<1>(mem[vid]).position.y += maxDeviation * std::sin(angle);
         }

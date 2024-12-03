@@ -3,12 +3,12 @@
 #include <tuple>
 
 #include "../tools/vector3.hpp"
-#include "carhull.h"
+#include "uavhull.h"
 #include "wheel/wheel.h"
 
 namespace {
 
-using namespace carphymodel::command;
+using namespace uavmodel::command;
 
 constexpr size_t validMovingCommandMask =
     // COMMAND_TYPE::FORWARD,
@@ -21,7 +21,7 @@ constexpr size_t validMovingCommandMask =
 
 }; // namespace
 
-namespace carphymodel {
+namespace uavmodel {
 
 void HullSystem::tick(double dt, Components& c) {
     using namespace std;
@@ -91,7 +91,7 @@ void HullSystem::tick(double dt, Components& c) {
             }
             continue;
         } else if (k == COMMAND_TYPE::SET_ROAD) {
-            pathPlanningModelData.route = EnvironmentInfoAgent{}.getRoute(coordinate.position, {param1, param2, 0});//TOCHANGE:终点的经纬度，需要变换到carphymodel坐标系
+            pathPlanningModelData.route = EnvironmentInfoAgent{}.getRoute(coordinate.position, {param1, param2, 0});//TOCHANGE:终点的经纬度，需要变换到uavmodel坐标系
             pathPlanningModelData.nextPoint = 1;
             auto firstSegmentDir = pathPlanningModelData.route[1] - pathPlanningModelData.route[0];
             pathPlanningModelData.prePoint = pathPlanningModelData.route[0] - firstSegmentDir;
@@ -122,4 +122,4 @@ void HullSystem::tick(double dt, Components& c) {
                           direction, speed, param);
 };
 
-} // namespace carphymodel
+} // namespace uavmodel

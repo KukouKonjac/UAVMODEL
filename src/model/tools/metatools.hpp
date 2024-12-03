@@ -2,7 +2,7 @@
 
 #include <array>
 
-namespace carphymodel::mymeta{
+namespace uavmodel::mymeta{
 
 template <typename ...T>
 struct type_list{};

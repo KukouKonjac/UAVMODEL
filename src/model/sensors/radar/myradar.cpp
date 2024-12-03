@@ -16,7 +16,7 @@ struct DoJobOnConstruct{
 
 }
 
-namespace carphymodel{
+namespace uavmodel{
 
 bool MyRadar::isDetectable(const Coordinate& self, const EntityInfo& e, const SensorData& sensor, const Hull& hull,
                             double jammerPower) const {
@@ -32,7 +32,7 @@ bool MyRadar::isDetectable(const Coordinate& self, const EntityInfo& e, const Se
     PdRadar1.ENUTargetState.tVel = { e.velocity.x, e.velocity.y, e.velocity.z };
     PdRadar1.Set_JamPower(jammerPower);
     PdRadar1.update();
-    if (carphymodel::rand() >= 0.95){
+    if (uavmodel::rand() >= 0.95){
         return false;
     }
     return PdRadar1.ENUTargetState.detected;
@@ -44,7 +44,7 @@ bool TankSensor::isDetectable(const Coordinate& self, const EntityInfo& e, const
     if (distance > sensor.detectrange) {
         return false;
     }
-    if (carphymodel::rand() >= sensor.detectprobability * e.baseInfo.hidden *
+    if (uavmodel::rand() >= sensor.detectprobability * e.baseInfo.hidden *
             (1 - e.baseInfo.active_interference_rate * distance / e.baseInfo.active_interference_distance * e.baseInfo.jammer)) {
         return false;
     }
@@ -57,7 +57,7 @@ bool ScopeSensor::isDetectable(const Coordinate& self, const EntityInfo& e, cons
     if (distance > sensor.detectrange) {
         return false;
     }
-    if (carphymodel::rand() >= sensor.detectprobability * e.baseInfo.hidden *
+    if (uavmodel::rand() >= sensor.detectprobability * e.baseInfo.hidden *
             (1 - e.baseInfo.active_interference_rate * distance / e.baseInfo.active_interference_distance * e.baseInfo.jammer)) {
         return false;
     }
@@ -70,7 +70,7 @@ bool photoelectricitySensor::isDetectable(const Coordinate& self, const EntityIn
     if (distance > sensor.detectrange) {
         return false;
     }
-    if (carphymodel::rand() >= sensor.detectprobability * e.baseInfo.hidden *
+    if (uavmodel::rand() >= sensor.detectprobability * e.baseInfo.hidden *
             (1 - e.baseInfo.active_interference_rate * distance / e.baseInfo.active_interference_distance * e.baseInfo.jammer)) {
         return false;
     }
@@ -83,7 +83,7 @@ bool SupportVehicleRadar::isDetectable(const Coordinate& self, const EntityInfo&
     if (distance > sensor.detectrange) {
         return false;
     }
-    if (carphymodel::rand() >= sensor.detectprobability * e.baseInfo.hidden *
+    if (uavmodel::rand() >= sensor.detectprobability * e.baseInfo.hidden *
             (1 - e.baseInfo.active_interference_rate * distance / e.baseInfo.active_interference_distance * e.baseInfo.jammer)) {
         return false;
     }
@@ -96,11 +96,11 @@ bool UnmannedVehicleSensor::isDetectable(const Coordinate& self, const EntityInf
     if (distance > sensor.detectrange) {
         return false;
     }
-    if (carphymodel::rand() >= sensor.detectprobability * e.baseInfo.hidden *
+    if (uavmodel::rand() >= sensor.detectprobability * e.baseInfo.hidden *
             (1 - e.baseInfo.active_interference_rate * distance / e.baseInfo.active_interference_distance * e.baseInfo.jammer)) {
         return false;
     }
     return true;
 }
 
-}; // namespace carphymodel
+}; // namespace uavmodel

@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 
-namespace carphymodel{
+namespace uavmodel{
 
 template <typename T>
 class Singleton{

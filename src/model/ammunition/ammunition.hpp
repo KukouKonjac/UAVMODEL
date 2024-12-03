@@ -3,7 +3,7 @@
 #include <random>
 #include "../tools/datastructure.hpp"
 
-namespace carphymodel{
+namespace uavmodel{
 
 class AmmunitionDamage{
 public:

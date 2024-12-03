@@ -3,7 +3,7 @@
 #include "../tools/datastructure.hpp"
 #include "../framework/system.hpp"
 
-namespace carphymodel{
+namespace uavmodel{
 
 //using namespace carphymodel::command;
 class PrepareSystem : public System{

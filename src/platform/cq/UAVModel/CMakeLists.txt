@@ -9,9 +9,6 @@ target_include_directories(${PROJ_NAME} PUBLIC D:/GDAL/GLADLibrary/include)
 #find_package(GDAL CONFIG REQUIRED)
 target_link_libraries(${PROJ_NAME} PRIVATE D:/GDAL/GLADLibrary/lib/gdal_i.lib)
 
-# if(MSVC)
-#   SET_TARGET_PROPERTIES(${PROJ_NAME} PROPERTIES LINK_FLAGS "/PROFILE")
-# endif()
 
 if(UNIX)
 target_link_libraries(${PROJ_NAME} dl)

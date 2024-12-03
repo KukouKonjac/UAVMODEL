@@ -12,7 +12,7 @@
 #include "../tools/datastructure.hpp"
 #include "../tools/myassert.hpp"
 
-namespace carphymodel {
+namespace uavmodel {
 
 class FireControlSystem : public System {
   public:
@@ -85,8 +85,8 @@ class FireControlSystem : public System {
         const auto& baseCoordinate = c.getSpecificSingleton<Coordinate>().value();
         const auto& selfPosition = baseCoordinate.position;
 
-        auto vid = c.getSpecificSingleton<carphymodel::VID>().value();
-        auto sid = c.getSpecificSingleton<carphymodel::SID>().value();
+        auto vid = c.getSpecificSingleton<uavmodel::VID>().value();
+        auto sid = c.getSpecificSingleton<uavmodel::SID>().value();
 
         auto& scannedMemory = c.getSpecificSingleton<ScannedMemory>();
         auto& sysscannedMemory = c.getSpecificSingleton<SystemScannedMemory>().value();
@@ -227,7 +227,7 @@ class FireControlSystem : public System {
     }
 
     // check if target detected and not destroyed
-    bool isTargetAvailable(const std::tuple<double, carphymodel::EntityInfo/*, carphymodel::ProtectionModel*/>& tar, SID selfSide) {
+    bool isTargetAvailable(const std::tuple<double, uavmodel::EntityInfo/*, uavphymodel::ProtectionModel*/>& tar, SID selfSide) {
         return std::get<0>(tar) == 0. && std::get<1>(tar).baseInfo.damageLevel != DAMAGE_LEVEL::KK &&
                std::get<1>(tar).baseInfo.side != selfSide;
     }
@@ -261,8 +261,8 @@ class FireControlSystem : public System {
         return value;
     }
 
-    FireEvent weaponShoot(carphymodel::FireUnit& fireUnit, const carphymodel::Vector3& selfPosition,
-                          const carphymodel::Vector3& targetPosition) {
+    FireEvent weaponShoot(uavmodel::FireUnit& fireUnit, const uavmodel::Vector3& selfPosition,
+                          const uavmodel::Vector3& targetPosition) {
         fireUnit.weapon.ammoRemain -= 1;
         fireUnit.weapon.reloadingState = fireUnit.weapon.reloadingTime;
         if (fireUnit.state == FIRE_UNIT_STATE::SINGLE_SHOOT) {
@@ -281,4 +281,4 @@ class FireControlSystem : public System {
     }
 };
 
-} // namespace carphymodel
+} // namespace uavphymodel

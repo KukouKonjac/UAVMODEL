@@ -3,7 +3,7 @@
 #include <string>
 #include "../tools/datastructure.hpp"
 
-namespace carphymodel{
+namespace uavmodel{
 
 struct SystemRestriction{
     std::vector<std::string> thisBefore;

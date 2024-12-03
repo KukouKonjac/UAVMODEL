@@ -41,12 +41,12 @@ class BaseInfo {
         }
     }
 
-    operator carphymodel::BaseInfo() const {
-        return carphymodel::BaseInfo{
-            .type = static_cast<carphymodel::BaseInfo::ENTITY_TYPE>(type),
+    operator uavmodel::BaseInfo() const {
+        return uavmodel::BaseInfo{
+            .type = static_cast<uavmodel::BaseInfo::ENTITY_TYPE>(type),
             .id = id,
             .side = side,
-            .damageLevel = static_cast<carphymodel::DAMAGE_LEVEL>(damageLevel),
+            .damageLevel = static_cast<uavmodel::DAMAGE_LEVEL>(damageLevel),
             .jammer = jammer,
             .hidden = hidden,
             .active_interference_rate = active_interference_rate,
@@ -93,13 +93,13 @@ class Vector3 {
         }
     }
 
-    Vector3(const carphymodel::Vector3& v){
+    Vector3(const uavmodel::Vector3& v){
         x = v.x;
         y = v.y;
         z = v.z;
     }
 
-    operator carphymodel::Vector3() const { return carphymodel::Vector3(x, y, z); }
+    operator uavmodel::Vector3() const { return uavmodel::Vector3(x, y, z); }
 
   public:
     // x
@@ -139,8 +139,8 @@ class EntityInfo {
         }
     }
 
-    operator carphymodel::EntityInfo() const {
-        return carphymodel::EntityInfo{
+    operator uavmodel::EntityInfo() const {
+        return uavmodel::EntityInfo{
             .position = position, 
             .velocity = velocity,
             .baseInfo = baseInfo,
@@ -149,7 +149,7 @@ class EntityInfo {
 
     EntityInfo() = default;
 
-    EntityInfo(const carphymodel::EntityInfo& e) {
+    EntityInfo(const uavmodel::EntityInfo& e) {
         baseInfo.damageLevel = static_cast<uint16_t>(e.baseInfo.damageLevel);
         baseInfo.id = e.baseInfo.id;
         baseInfo.side = e.baseInfo.side;
@@ -217,7 +217,7 @@ class FireEvent {
 
     FireEvent() = default;    
 
-    FireEvent(const carphymodel::FireEvent& f) {
+    FireEvent(const uavmodel::FireEvent& f) {
         weaponName = f.weaponName;
         target = f.target;
         position = f.position;
@@ -228,8 +228,8 @@ class FireEvent {
         param2 = f.param2;
     }
 
-    operator carphymodel::FireEvent () const {
-        return carphymodel::FireEvent{
+    operator uavmodel::FireEvent () const {
+        return uavmodel::FireEvent{
             .weaponName = weaponName,
             .target = target,
             .position = position,

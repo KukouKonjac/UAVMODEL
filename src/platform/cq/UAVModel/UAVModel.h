@@ -13,20 +13,20 @@
 #include <mutex>
 #include "../csmodel_base/csmodel_base.h"
 #include "common_struct.h"
-#include "CarPhyModel_export.h"
-#include "src/model/carmodel.hpp"
+#include "UAVModel_export.h"
+#include "src/model/uavmodel.hpp"
 
 extern "C"
 {
-    CARPHYMODEL_EXPORT CSModelObject *CreateModelObject();
-    CARPHYMODEL_EXPORT void DestroyMemory(void *mem, bool is_array);
+    UAVMODEL_EXPORT CSModelObject *CreateModelObject();
+    UAVMODEL_EXPORT void DestroyMemory(void *mem, bool is_array);
 }
 
 
-class CarPhyModel : public CSModelObject
+class UAVModel : public CSModelObject
 {
 public:
-    CarPhyModel() = default;
+    UAVModel() = default;
     virtual bool Init(const std::unordered_map<std::string, std::any> &value)
         override;
     
@@ -37,12 +37,12 @@ public:
     
     virtual std::unordered_map<std::string, std::any> *GetOutput() override;
     // avoid data race through atomic var
-    // inline static volatile std::atomic<carphymodel::VID> VIDCounter = 0;
-    inline static carphymodel::VID VIDCounter = 0;
+    // inline static volatile std::atomic<uavmodel::VID> VIDCounter = 0;
+    inline static uavmodel::VID VIDCounter = 0;
     // need lock?
     inline static std::mutex initLock;
-    carphymodel::VID myVID;
-    carphymodel::VID getVID() {
+    uavmodel::VID myVID;
+    uavmodel::VID getVID() {
         return myVID;
     }
 
@@ -50,7 +50,7 @@ public:
     inline static struct Location {
         double longitude, latitude, altitude;
     } location;
-    carphymodel::CarModel model;
+    uavmodel::UavModel model;
     double timeiter = 0;
     std::chrono::high_resolution_clock::time_point lastFrameTime;
     //for test

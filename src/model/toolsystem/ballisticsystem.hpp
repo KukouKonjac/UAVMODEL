@@ -3,7 +3,7 @@
 #include "../tools/datastructure.hpp"
 #include "../framework/system.hpp"
 
-namespace carphymodel{
+namespace uavmodel{
 
 class BallisticSystem : public System{
 public:

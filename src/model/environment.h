@@ -5,7 +5,7 @@
 #include <memory>
 
 
-namespace carphymodel {
+namespace uavmodel {
 
 class Environment {
   public:
@@ -97,4 +97,4 @@ class EnvironmentInfoAgent {
     inline static std::unique_ptr<Environment> env = std::make_unique<Environment>();
 };
 
-} // namespace carphymodel
+} // namespace uavmodel

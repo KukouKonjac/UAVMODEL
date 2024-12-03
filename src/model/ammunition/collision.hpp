@@ -7,7 +7,7 @@
 #include "../tools/constant.hpp"
 #include "../tools/datastructure.hpp"
 
-namespace carphymodel {
+namespace uavmodel {
 
 /// @brief collision result
 struct IntersectionInfo {
@@ -145,4 +145,4 @@ inline double pointBlockDistance(const Vector3 &pos, const Block &size, const Co
     return sqrt(r2);
 }
 
-} // namespace carphymodel
+} // namespace uavmodel

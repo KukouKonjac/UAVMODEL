@@ -4,9 +4,9 @@
 
 namespace wsfplugin {
 
-struct NS2Model : public carphymodel::Communication {
+struct NS2Model : public uavmodel::Communication {
     double params;
-    virtual bool sendMessage(const carphymodel::Vector3& self, const carphymodel::Vector3& target){
+    virtual bool sendMessage(const uavmodel::Vector3& self, const uavmodel::Vector3& target){
         // TODO:
         
     }

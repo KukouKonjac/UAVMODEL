@@ -3,11 +3,11 @@
 #include <ranges>
 
 #include "basetest.h"
-#include "src/model/hull/carhull.h"
+#include "src/model/hull/uavhull.h"
 
 namespace test13 {
 
-using namespace carphymodel;
+using namespace uavmodel;
 
 int test_main() {
     using namespace std;

@@ -10,7 +10,7 @@
 #include "AP.h"
 #include "collision.hpp"
 
-namespace carphymodel {
+namespace uavmodel {
 
 void APDamage::updateDamage(const FireEvent& fireEvent, Components& c) const {
 
@@ -102,4 +102,4 @@ void APDamage::updateDamage(const FireEvent& fireEvent, Components& c) const {
     }
 }
 
-} // namespace carphymodel
+} // namespace uavmodel

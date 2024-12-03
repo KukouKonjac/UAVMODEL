@@ -6,7 +6,7 @@
 #include <string>
 #include <type_traits>
 
-namespace carphymodel::component {
+namespace uavmodel::component {
 
 #if __cplusplus < 202002L
 
@@ -293,4 +293,4 @@ inline WheelMotionParamList componentDeserialize<WheelMotionParamList>(rapidxml:
 //     return tmp;
 // }
 
-} // namespace carphymodel::component
+} // namespace uavmodel::component

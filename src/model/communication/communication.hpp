@@ -2,7 +2,7 @@
 
 #include "../tools/datastructure.hpp"
 
-namespace carphymodel{
+namespace uavmodel{
 
 class Communication{
 public:

@@ -7,7 +7,7 @@
 
 namespace {
 
-using namespace carphymodel;
+using namespace uavmodel;
 
 inline void update(DAMAGE_LEVEL &tar, DAMAGE_LEVEL newDamage) {
     if (newDamage > tar) {
@@ -17,7 +17,7 @@ inline void update(DAMAGE_LEVEL &tar, DAMAGE_LEVEL newDamage) {
 
 } // namespace
 
-namespace carphymodel {
+namespace uavmodel {
 
 // no damage if any armor between explosion point and damage model
 void HEDamage::updateDamage(const FireEvent &fireEvent, Components &c) const {
@@ -34,12 +34,12 @@ void HEDamage::updateDamage(const FireEvent &fireEvent, Components &c) const {
             // probability add
             protection.activeProtectionAmmo--;
             if ((fireEvent.weaponName == "AP" || fireEvent.weaponName == "HE") &&
-                carphymodel::rand() <= protection.Interception_probability1) {
+                uavmodel::rand() <= protection.Interception_probability1) {
                 logFile << "HE interception result: success" << std::endl; // 写入文件
                 //std::cout << "HE interception result: success" << std::endl;
                 return;
             } else if ((fireEvent.weaponName == "antitankmissile" || fireEvent.weaponName == "rocket") &&
-                       carphymodel::rand() <= protection.Interception_probability2) {
+                       uavmodel::rand() <= protection.Interception_probability2) {
                 logFile << "HE interception result: success" << std::endl; // 写入文件
                 //std::cout << "HE interception result: success" << std::endl;
                 //protection.activeProtectionAmmo--;
@@ -93,4 +93,4 @@ void HEDamage::updateDamage(const FireEvent &fireEvent, Components &c) const {
     }
 }
 
-} // namespace carphymodel
+} // namespace uavmodel

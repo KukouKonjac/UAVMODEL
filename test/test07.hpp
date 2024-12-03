@@ -4,8 +4,8 @@ namespace test07{
 
     int test_main() {
         using namespace std;
-        CarModel m1;
-        CarBuilder builder;
+        UavModel m1;
+        UavBuilder builder;
         builder.buildFromFile("D:\\Desktop\\FinalProj\\Code\\CarPhyModel\\src\\config\\car.xml", m1, true);
 
         cout << "model build" << endl;

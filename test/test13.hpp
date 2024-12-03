@@ -3,11 +3,11 @@
 #include <ranges>
 
 #include "basetest.h"
-#include "src/model/hull/carhull.h"
+#include "src/model/hull/uavhull.h"
 
 namespace test13 {
 
-using namespace carphymodel;
+using namespace uavmodel;
 
 struct RoutePoint {
     double longitude;
@@ -71,14 +71,14 @@ constexpr inline double rate = 111000.;
 Vector3 CoordTrans(const RoutePoint &location) {
     return {
         rate * (location.latitude - route[0].latitude),
-        rate * (location.longitude - route[0].longitude) * cos(carphymodel::DEG2RAD(route[0].latitude)),
+        rate * (location.longitude - route[0].longitude) * cos(uavmodel::DEG2RAD(route[0].latitude)),
         0,
     };
 }
 
 RoutePoint positionTrans(const Vector3 &position) {
     return {
-        .longitude = position.y / (rate * cos(carphymodel::DEG2RAD(route[0].latitude))) + route[0].longitude,
+        .longitude = position.y / (rate * cos(uavmodel::DEG2RAD(route[0].latitude))) + route[0].longitude,
         .latitude = position.x / rate + route[0].latitude,
     };
 }

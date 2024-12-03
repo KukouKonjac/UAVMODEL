@@ -2,7 +2,7 @@
 
 #include "AP.h"
 
-namespace carphymodel{
+namespace uavmodel{
 
 // HEAT
 using OTHERDamage = APDamage;

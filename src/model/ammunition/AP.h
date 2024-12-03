@@ -5,7 +5,7 @@
 #include "../tools/datastructure.hpp"
 #include "ammunition.hpp"
 
-namespace carphymodel{
+namespace uavmodel{
 
 // AP
 class APDamage final : public AmmunitionDamage{

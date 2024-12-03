@@ -25,7 +25,7 @@ struct TimeCounter {
 
 namespace wsfplugin {
 
-struct WSFEnvironment : public carphymodel::Environment {
+struct WSFEnvironment : public uavmodel::Environment {
     // Dem data;
     
     double longitudeO;
@@ -41,10 +41,10 @@ struct WSFEnvironment : public carphymodel::Environment {
     struct Lonlat {
         double latitude, longitude;
     };
-    Lonlat positionToLonlat(const carphymodel::Vector3& position) const {
+    Lonlat positionToLonlat(const uavmodel::Vector3& position) const {
         constexpr double rate = 111000.;
         return {.latitude = position.x / rate + latitudeO,
-                .longitude = position.y / (rate * cos(carphymodel::DEG2RAD(latitudeO))) + longitudeO};
+                .longitude = position.y / (rate * cos(uavmodel::DEG2RAD(latitudeO))) + longitudeO};
     }
 
   public:
@@ -90,7 +90,7 @@ struct WSFEnvironment : public carphymodel::Environment {
                     invDet};
     }
 
-    virtual double getAltitude(const carphymodel::Vector3& pos) const override {
+    virtual double getAltitude(const uavmodel::Vector3& pos) const override {
         auto [latitude, longitude] = positionToLonlat(pos);
 
         auto curr_pos = std::make_pair(longitude, latitude);
@@ -129,14 +129,14 @@ struct WSFEnvironment : public carphymodel::Environment {
         return static_cast<double>(elevation1 * w1 + elevation2 * w2 + elevation3 * w3 + elevation4 * w4);
     }
 
-    virtual double getSlope(const carphymodel::Vector3& pos, const carphymodel::Vector3& dir) const override {
+    virtual double getSlope(const uavmodel::Vector3& pos, const uavmodel::Vector3& dir) const override {
         constexpr double length = 1;
         auto a1 = getAltitude(pos);
         auto a2 = getAltitude(pos + length * dir);
         return (a2 - a1) / length;
     }
 
-    virtual bool getIntervisibility(const carphymodel::Vector3& pos1, const carphymodel::Vector3& pos2) const override {
+    virtual bool getIntervisibility(const uavmodel::Vector3& pos1, const uavmodel::Vector3& pos2) const override {
         constexpr double unit = 20.;
         auto a1 = -pos1.z;
         auto a2 = -pos2.z;
@@ -154,10 +154,10 @@ struct WSFEnvironment : public carphymodel::Environment {
         return true;
     }
 
-    virtual std::vector<carphymodel::Vector3> getRoute(const carphymodel::Vector3& start, const carphymodel::Vector3& end) const override {
+    virtual std::vector<uavmodel::Vector3> getRoute(const uavmodel::Vector3& start, const uavmodel::Vector3& end) const override {
         //for test
         if (abs(end.x - 1) < 0.001) {
-            return std::vector<carphymodel::Vector3>{
+            return std::vector<uavmodel::Vector3>{
                 {0.000000, 0.000000, 0.000000},      {-5.772000, -19.215904, 0.000000},
                 {-14.097000, -42.131126, 0.000000},  {-16.539000, -51.790457, 0.000000},
                 {-18.537000, -67.820836, 0.000000},  {-19.425000, -92.277441, 0.000000},
@@ -176,7 +176,7 @@ struct WSFEnvironment : public carphymodel::Environment {
                 {879.009000, -16.955209, 0.000000},  {877.233000, -31.238688, 0.000000},
                 {861.360000, -135.230637, 0.000000}, {856.809000, -164.825184, 0.000000}};
         } else if (abs(end.x - 2) < 0.001) {
-            return std::vector<carphymodel::Vector3>{
+            return std::vector<uavmodel::Vector3>{
                 {0.000000, 0.000000, 0.000000},      {-31.413000, 3.801907, 0.000000},
                 {-51.504000, 6.165254, 0.000000},    {-57.054000, 6.884534, 0.000000},
                 {-73.593000, 9.453390, 0.000000},    {-83.028000, 10.891949, 0.000000},
@@ -195,7 +195,7 @@ struct WSFEnvironment : public carphymodel::Environment {
                 {159.285000, -679.822045, 0.000000}};
         } else if (abs(end.x - 3) < 0.001)
         {
-            return std::vector<carphymodel::Vector3>{
+            return std::vector<uavmodel::Vector3>{
                 {0.000000, 0.000000, 0.000000},      {-5.772000, -19.215904, 0.000000},
                 {-14.097000, -42.131126, 0.000000},  {-16.539000, -51.790457, 0.000000},
                 {-18.537000, -67.820836, 0.000000},  {-19.425000, -92.277441, 0.000000},
@@ -222,7 +222,7 @@ struct WSFEnvironment : public carphymodel::Environment {
                 {697.524000, 515.027321, 0.000000},  {697.524000, 515.027321, 0.000000}};
         } else if (abs(end.x - 4) < 0.001)
         {
-            return std::vector<carphymodel::Vector3>{
+            return std::vector<uavmodel::Vector3>{
                 {0.000000, 0.000000, 0.000000},        {-5.772000, -19.215904, 0.000000},
                 {-14.097000, -42.131126, 0.000000},    {-16.539000, -51.790457, 0.000000},
                 {-18.537000, -67.820836, 0.000000},    {-19.425000, -92.277441, 0.000000},
@@ -287,9 +287,9 @@ struct WSFEnvironment : public carphymodel::Environment {
         // fill grid with moveable cells using slope
         for (double i = 0; i < width; i++) {
             for (double j = 0; j < height; j++) {
-                auto pos = carphymodel::Vector3(x1 + i * step, y1 + j * step, 0);
-                auto slope_x = getSlope(pos, carphymodel::Vector3(1, 0, 0));
-                auto slope_y = getSlope(pos, carphymodel::Vector3(0, 1, 0));
+                auto pos = uavmodel::Vector3(x1 + i * step, y1 + j * step, 0);
+                auto slope_x = getSlope(pos, uavmodel::Vector3(1, 0, 0));
+                auto slope_y = getSlope(pos, uavmodel::Vector3(0, 1, 0));
                 auto slope = std::sqrt(slope_x * slope_x + slope_y * slope_y);
                 if (slope > threshold) {
                     ox.push_back(x1 + i * step);
@@ -339,7 +339,7 @@ struct WSFEnvironment : public carphymodel::Environment {
         astar.setOy(oy);
         astar.calObstacleMap(ox, oy);
         astar.getMotionModel();
-        std::vector<carphymodel::Vector3> path = astar.planning(startpos, goal);
+        std::vector<uavmodel::Vector3> path = astar.planning(startpos, goal);
 
         
         std::cout << "linkcheckedtimes: " << Astar::linkedchecked << std::endl;

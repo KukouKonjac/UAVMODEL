@@ -2,7 +2,7 @@
 
 #include "ammunition.hpp"
 
-namespace carphymodel{
+namespace uavmodel{
 
 // HE
 class HEDamage final : public AmmunitionDamage{

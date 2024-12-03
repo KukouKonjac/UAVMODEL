@@ -198,9 +198,9 @@ bool Astar::verifyNode(Astar::Node* node) {
  * @param closed_set
  * @return
  */
-std::vector<carphymodel::Vector3> Astar::calFinalPath(Astar::Node* goal_node, std::map<double, Node*> closed_set) {
-    std::vector<carphymodel::Vector3> rxy;
-    rxy.push_back(carphymodel::Vector3(calPosition(goal_node->x, min_x), calPosition(goal_node->y, min_y), 0.0));
+std::vector<uavmodel::Vector3> Astar::calFinalPath(Astar::Node* goal_node, std::map<double, Node*> closed_set) {
+    std::vector<uavmodel::Vector3> rxy;
+    rxy.push_back(uavmodel::Vector3(calPosition(goal_node->x, min_x), calPosition(goal_node->y, min_y), 0.0));
     /*std::vector<double> rx, ry;
     rx.push_back(calPosition(goal_node->x, min_x));
     ry.push_back(calPosition(goal_node->y, min_y));*/
@@ -209,7 +209,7 @@ std::vector<carphymodel::Vector3> Astar::calFinalPath(Astar::Node* goal_node, st
 
     while (parent_index != -1) {
         Node* node = closed_set[parent_index];
-        rxy.push_back(carphymodel::Vector3(calPosition(node->x, min_x), calPosition(node->y, min_y), 0.0));
+        rxy.push_back(uavmodel::Vector3(calPosition(node->x, min_x), calPosition(node->y, min_y), 0.0));
         /*rx.push_back(calPosition(node->x, min_x));
         ry.push_back(calPosition(node->y, min_y));*/
 
@@ -234,7 +234,7 @@ struct Mempool {
  * @param goal 终点
  * @return 规划后的路径
  */
-std::vector<carphymodel::Vector3> Astar::planning(std::vector<double> start, std::vector<double> goal) {
+std::vector<uavmodel::Vector3> Astar::planning(std::vector<double> start, std::vector<double> goal) {
     double sx = start[0], sy = start[1];
     double gx = goal[0], gy = goal[1];
 
@@ -271,7 +271,7 @@ std::vector<carphymodel::Vector3> Astar::planning(std::vector<double> start, std
         // }
         if (open_set.empty()) {
             std::cout << "No path found" << std::endl;
-            return std::vector<carphymodel::Vector3>();
+            return std::vector<uavmodel::Vector3>();
         }
         current = open_set.top();
         open_set.pop();

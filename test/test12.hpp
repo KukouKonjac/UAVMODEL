@@ -1,11 +1,11 @@
 #pragma once
 
 #include "basetest.h"
-#include "src/model/hull/carhull.h"
+#include "src/model/hull/uavhull.h"
 
 namespace test12 {
 
-using namespace carphymodel;
+using namespace uavmodel;
 
 int test_main() {
     using namespace std;

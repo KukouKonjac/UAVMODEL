@@ -65,9 +65,9 @@ class Astar {
 
     bool verifyNode(Node* node);
 
-    std::vector<carphymodel::Vector3> calFinalPath(Node* goal_node, std::map<double, Node*> closed_set);
+    std::vector<uavmodel::Vector3> calFinalPath(Node* goal_node, std::map<double, Node*> closed_set);
 
-    std::vector<carphymodel::Vector3> planning(std::vector<double> start, std::vector<double> goal);
+    std::vector<uavmodel::Vector3> planning(std::vector<double> start, std::vector<double> goal);
 
     double calHeuristic(Node* n1, Node* n2, const std::map<double, Node*>& closed_set);
 

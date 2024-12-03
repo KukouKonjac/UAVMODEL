@@ -3,7 +3,7 @@
 #include "../src/extern/pfr.hpp"
 #include "../src/extern/rapidxml-1.13/rapidxml.hpp"
 #include "../src/model/ammunition/ammunitionfactory.hpp"
-#include "../src/model/carbuilder.h"
+#include "../src/model/uavbuilder.h"
 #include "../src/model/framework/component.hpp"
 #include "../src/model/hull/wheel/wheel.h"
 #include "../src/model/tools/coordinate.hpp"
@@ -21,7 +21,7 @@
 #include <unordered_map>
 #include <optional>
 
-using namespace carphymodel;
+using namespace uavmodel;
 
 inline void printCSValueMap(const std::unordered_map<std::string, std::any>& v) {
     using namespace std;
@@ -94,7 +94,7 @@ std::ostream &operator<<(std::ostream &os, const Quaternion &v) {
     return os;
 }
 
-inline void buildBaseModel(const std::string& XMLFilePath, carphymodel::CarModel& model) {
-    carphymodel::CarBuilder::buildFromFile(XMLFilePath, model);
+inline void buildBaseModel(const std::string& XMLFilePath, uavmodel::UavModel& model) {
+    uavmodel::UavBuilder::buildFromFile(XMLFilePath, model);
     //"D:\\codeproject\\CarPhyModel\\src\\config\\car_protection.xml"
 }

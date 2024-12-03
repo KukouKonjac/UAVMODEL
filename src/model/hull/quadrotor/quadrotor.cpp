@@ -1,14 +1,14 @@
-ï»¿#include <string>
+#include <string>
 
 #include "../../tools/constant.hpp"
 #include "../../tools/myassert.hpp"
-#include "wheel.h"
+#include "quadrotor.h"
 
 namespace {
 
 using namespace uavmodel;
 
-// æŠ•å°„åˆ°ç»™å®šèŒƒå›´å†…
+// Í¶Éäµ½¸ø¶¨·¶Î§ÄÚ
 double clamp(double value, double min, double max) {
     if (value < min)
         value = min;
@@ -36,10 +36,10 @@ double softClamp(double value, double min, double max) {
     return softClamp(value - mid, max - mid) + mid;
 }
 
-// è·å–å½“å‰è½¬è§’æ—¶è§’é€Ÿåº¦ä¸é€Ÿåº¦æ¯”ä¾‹
+// »ñÈ¡µ±Ç°×ª½ÇÊ±½ÇËÙ¶ÈÓëËÙ¶È±ÈÀı
 double angularLinearRatio(double rad, double LENGTH) { return tan(rad) / LENGTH; }
 
-// è·å–ç¬¦å·
+// »ñÈ¡·ûºÅ
 int sign(double value) {
     if (value > INF_SMALL)
         return 1;
@@ -63,102 +63,100 @@ bool equal(double a, double b) { return fabs(a - b) < INF_SMALL; }
 
 namespace uavmodel {
 
-// å„ç§é™åˆ¶å¯¼è‡´çš„é€Ÿåº¦å‡å°ä¸ä¼šå°äºè¯¥é€Ÿåº¦ï¼Œé¿å…åœè½¦
+// ¸÷ÖÖÏŞÖÆµ¼ÖÂµÄËÙ¶È¼õĞ¡²»»áĞ¡ÓÚ¸ÃËÙ¶È£¬±ÜÃâÍ£³µ
 constexpr inline double MIN_SPEED = 3.;
 
-// é‡‡ç”¨å‰å³ä¸‹åæ ‡ç³»ï¼Œé€Ÿåº¦å’Œè½¬è§’åˆ†åˆ«æ§åˆ¶ä»¥æ”¯æŒåŸåœ°è½¬æ–¹å‘ç›˜ã€ç¼“æ…¢è½¬å¼¯ã€è¡Œè¿›ä¸­å˜å‘ç­‰æ“ä½œ
-// ç”±äºåŠ¨åŠ›å­¦ä¹‹ä¸Šä¼šé‡‡ç”¨æ§åˆ¶å™¨ï¼Œæ— éœ€è€ƒè™‘æ˜¾å¼æ¬§æ‹‰æ³•çš„ä¸ç¨³å®šé—®é¢˜ï¼Œå‡ºäºç®€å•è€ƒè™‘ç›´æ¥ä½¿ç”¨æ˜¾å¼æ¬§æ‹‰æ³•
+// ²ÉÓÃÇ°ÓÒÏÂ×ø±êÏµ£¬ËÙ¶ÈºÍ×ª½Ç·Ö±ğ¿ØÖÆÒÔÖ§³ÖÔ­µØ×ª·½ÏòÅÌ¡¢»ºÂı×ªÍä¡¢ĞĞ½øÖĞ±äÏòµÈ²Ù×÷
+// ÓÉÓÚ¶¯Á¦Ñ§Ö®ÉÏ»á²ÉÓÃ¿ØÖÆÆ÷£¬ÎŞĞè¿¼ÂÇÏÔÊ½Å·À­·¨µÄ²»ÎÈ¶¨ÎÊÌâ£¬³öÓÚ¼òµ¥¿¼ÂÇÖ±½ÓÊ¹ÓÃÏÔÊ½Å·À­·¨
 
-// å½±å“å› ç´ ï¼š
-// å‰è½®è½¬å‘ï¼š1. æœ€å¤§è½¬è§’ 2. æœ€å¤§è½¬åŠ¨é€Ÿåº¦ 3. æœ€å¤§ä¾§å‘åŠ é€Ÿåº¦ 4. åˆ°è¾¾ç›®æ ‡æ–¹å‘æ—¶èƒ½å›æ­£
-// é€Ÿåº¦ï¼š1. æœ€å¤§ç›´çº¿é€Ÿåº¦ 2. æœ€å¤§å‡é€ŸåŠ é€Ÿåº¦ 3. æœ€å¤§ä¾§å‘åŠ é€Ÿåº¦ 4. æœ€å¤§å‰è¿›åŠ é€Ÿåº¦ 5.
-// å¡åº¦å¸¦æ¥çš„é‡åŠ›åŠ é€Ÿåº¦åˆ†é‡
+// Ó°ÏìÒòËØ£º
+// Ç°ÂÖ×ªÏò£º1. ×î´ó×ª½Ç 2. ×î´ó×ª¶¯ËÙ¶È 3. ×î´ó²àÏò¼ÓËÙ¶È 4. µ½´ïÄ¿±ê·½ÏòÊ±ÄÜ»ØÕı
+// ËÙ¶È£º1. ×î´óÖ±ÏßËÙ¶È 2. ×î´ó¼õËÙ¼ÓËÙ¶È 3. ×î´ó²àÏò¼ÓËÙ¶È 4. ×î´óÇ°½ø¼ÓËÙ¶È 5.
+// ÆÂ¶È´øÀ´µÄÖØÁ¦¼ÓËÙ¶È·ÖÁ¿
 
-// ç”±äºå‰è½®è½¬å‘éœ€è¦æ—¶é—´ï¼Œæ•…é€Ÿåº¦ä¹Ÿéœ€è¦å—æœ€å¤§ä¾§å‘åŠ é€Ÿåº¦çº¦æŸ
-// æ§åˆ¶æ–¹æ³•ï¼šç¬¦åˆä¸Šè¿°çº¦æŸçš„æ¡ä»¶ä¸‹å°½å¯èƒ½å¿«é€Ÿåœ°å‘ç›®æ ‡è°ƒæ•´
-// TODOï¼šå€’è½¦
-void WheelMoveSystem::tick(double dt, Coordinate &baseCoordinate, Hull &hull, double expectYaw, double expectSpeed,
-                           WheelMotionParamList &params) {
-    // å‚æ•°è®¡ç®—
-    double speed = baseCoordinate.directionWorldToBody(hull.velocity).x;
+// ÓÉÓÚÇ°ÂÖ×ªÏòĞèÒªÊ±¼ä£¬¹ÊËÙ¶ÈÒ²ĞèÒªÊÜ×î´ó²àÏò¼ÓËÙ¶ÈÔ¼Êø
+// ¿ØÖÆ·½·¨£º·ûºÏÉÏÊöÔ¼ÊøµÄÌõ¼şÏÂ¾¡¿ÉÄÜ¿ìËÙµØÏòÄ¿±êµ÷Õû
+// TODO£ºµ¹³µ
+void QuadrotorMoveSystem::tick(double dt, Coordinate& baseCoordinate, Hull& hull, double expectYaw, double expectSpeed,
+                           QuadrotorMotionParamList& params) {
+    // ²ÎÊı¼ÆËã
+    double speed = baseCoordinate.directionWorldToBody(hull.velocity).x;//Ç°ÓÒÏÂ×ø±êÏµ
     double yaw_now = Quaternion::fromCompressedQuaternion(baseCoordinate.attitude).getEuler().z;
-    // ç›®æ ‡åèˆªè§’ä¸å½“å‰åèˆªè§’çš„å·®ï¼Œç›®æ ‡åå³ä¸ºæ­£
+    // Ä¿±êÆ«º½½ÇÓëµ±Ç°Æ«º½½ÇµÄ²î£¬Ä¿±êÆ«ÓÒÎªÕı
     double exp_yaw_diff = angleDiff(expectYaw, yaw_now); // atan2(local_exp_direction.y, local_exp_direction.x);
-    // å€’è½¦
+    // µ¹³µ
     if (speed < 0)
         exp_yaw_diff = -exp_yaw_diff;
     Vector3 front_direction = baseCoordinate.directionBodyToWorld(Vector3(1., 0., 0.));
-    // å½“å‰å¡åº¦
-    double slope = env.getSlope(baseCoordinate.position, front_direction);
-    // é‡åŠ›å‘å‰åŠ é€Ÿåº¦åˆ†é‡
+    // ÖØÁ¦ÏòÇ°¼ÓËÙ¶È·ÖÁ¿
     double gravity_acceleration = -G * slope / sqrt(1 + slope * slope);
 
-    // æ›´æ–°è½¬è§’(æ–¹å‘ç›˜)
+    // ¸üĞÂ×ª½Ç(·½ÏòÅÌ)
 
     double angle_restriction = params.MAX_ANGLE;
-    // è½¬å¼¯åŠ é€Ÿåº¦çº¦æŸ
+    // ×ªÍä¼ÓËÙ¶ÈÔ¼Êø
     double acceleration_restriction_on_angle =
         (fabs(speed) < INF_SMALL) ? PI / 2 : atan(params.MAX_LATERAL_ACCELERATION * params.LENGTH / (speed * speed));
     angle_restriction = fmin(angle_restriction, acceleration_restriction_on_angle);
-    // å‰©ä½™å›æ­£æ—¶é—´çº¦æŸ
+    // Ê£Óà»ØÕıÊ±¼äÔ¼Êø
     double angular_speed = hull.palstance.norm() * sign(hull.palstance.z);
     double time_last = /* 2 * */ exp_yaw_diff / angular_speed;
     if (time_last < 0.)
         time_last = INFINITY;
     double rotate_restriction_on_angle = time_last * params.ROTATE_SPEED;
     angle_restriction = fmin(angle_restriction, rotate_restriction_on_angle);
-    // çº¦æŸä¸‹ç›®æ ‡è½¬è§’
+    // Ô¼ÊøÏÂÄ¿±ê×ª½Ç
     double exp_angle = clamp(params.angle + exp_yaw_diff, angle_restriction);
     // double exp_angle = clamp(exp_yaw_diff > 0 ? params.MAX_ANGLE : -params.MAX_ANGLE,
     //                          fmin(aviliable_angle, time_last * params.ROTATE_SPEED));
     // double exp_angle =
     //     clamp(params.angle + exp_yaw_diff, multiMin(params.MAX_ANGLE, aviliable_angle,
     //     time_last * params.ROTATE_SPEED));
-    // è½¬åŠ¨é€Ÿåº¦çº¦æŸä¸‹å¯è¡Œè½¬åŠ¨é‡
+    // ×ª¶¯ËÙ¶ÈÔ¼ÊøÏÂ¿ÉĞĞ×ª¶¯Á¿
     double delta_radius = clamp(exp_angle - params.angle, params.ROTATE_SPEED * dt);
     params.angle += delta_radius;
 
-    // æ›´æ–°é€Ÿåº¦(æ²¹é—¨)
+    // ¸üĞÂËÙ¶È(ÓÍÃÅ)
 
-    // è½¬å¼¯é€Ÿåº¦å¤ªå¿«ï¼Œå‡é€Ÿ
+    // ×ªÍäËÙ¶ÈÌ«¿ì£¬¼õËÙ
     double restriction_rate = 1.;
     if (equal(params.angle, rotate_restriction_on_angle) || equal(params.angle, acceleration_restriction_on_angle))
         restriction_rate = 0.95;
     double speed_restriction = params.MAX_LINEAR_SPEED;
-    // æœ€å¤§ä¾§å‘åŠ é€Ÿåº¦çº¦æŸä¸‹çš„æœ€å¤§é€Ÿåº¦
+    // ×î´ó²àÏò¼ÓËÙ¶ÈÔ¼ÊøÏÂµÄ×î´óËÙ¶È
     double acceleration_restriction_on_speed =
         (fabs(params.angle) < INF_SMALL)
             ? params.MAX_LINEAR_SPEED
             : restriction_rate * sqrt(params.MAX_LATERAL_ACCELERATION * params.LENGTH / fabs(tan(params.angle)));
     speed_restriction = fmin(speed_restriction, acceleration_restriction_on_speed);
-    // TODO: å›æ­£é€Ÿåº¦(time_last * params.ROTATE_SPEED >= params.MAX_ANGLE && aviliable_angle
+    // TODO: »ØÕıËÙ¶È(time_last * params.ROTATE_SPEED >= params.MAX_ANGLE && aviliable_angle
     // >= params.MAX_ANGLE)
     double rotate_restriction_on_speed =
         /* 2 *  */ restriction_rate * (params.ROTATE_SPEED * exp_yaw_diff) /
         (fabs(params.angle) * angularLinearRatio(params.angle, params.LENGTH));
-    // è‹¥ä¸éœ€è¦å›æ­£,æ— é™åˆ¶
+    // Èô²»ĞèÒª»ØÕı,ÎŞÏŞÖÆ
     if (params.angle * delta_radius <= 0)
         rotate_restriction_on_speed = INFINITY;
-    // // å½“å‰è½¬å‘ä¸æœŸæœ›è½¬å‘ç›¸å,æ— é™åˆ¶(è‹¥ç›´æ¥åœè½¦ä¼šä½¿å¾—å°å¹…åº¦æ‘†åŠ¨æ—¶é€Ÿåº¦å¤ªå°)
+    // // µ±Ç°×ªÏòÓëÆÚÍû×ªÏòÏà·´,ÎŞÏŞÖÆ(ÈôÖ±½ÓÍ£³µ»áÊ¹µÃĞ¡·ù¶È°Ú¶¯Ê±ËÙ¶ÈÌ«Ğ¡)
     // if (rotate_restriction_on_speed <= 0.)
     //     rotate_restriction_on_speed = INFINITY;
-    // å½“å‰è½¬å‘ä¸æœŸæœ›è½¬å‘ç›¸å,æˆ–é™åˆ¶é€Ÿåº¦å¤ªå°(ç”±äºé€Ÿåº¦å‡å°æ—¶æ–¹å‘ç›˜è§’åº¦å¯ä»¥å˜å¤§,è¿›ä¸€æ­¥åˆé™åˆ¶é€Ÿåº¦å¤§å°,è‹¥æ— é™åˆ¶å‡å°é€Ÿåº¦æœ€ç»ˆä¼šå¯¼è‡´åœè½¦)
+    // µ±Ç°×ªÏòÓëÆÚÍû×ªÏòÏà·´,»òÏŞÖÆËÙ¶ÈÌ«Ğ¡(ÓÉÓÚËÙ¶È¼õĞ¡Ê±·½ÏòÅÌ½Ç¶È¿ÉÒÔ±ä´ó,½øÒ»²½ÓÖÏŞÖÆËÙ¶È´óĞ¡,ÈôÎŞÏŞÖÆ¼õĞ¡ËÙ¶È×îÖÕ»áµ¼ÖÂÍ£³µ)
     if (rotate_restriction_on_speed <= MIN_SPEED)
         rotate_restriction_on_speed = MIN_SPEED;
     speed_restriction = fmin(speed_restriction, rotate_restriction_on_speed);
-    // è®¡ç®—å‰©ä½™æ²¹é‡add by wsb
+    // ¼ÆËãÊ£ÓàÓÍÁ¿add by wsb
     if (params.OIL_REMAIN > 0)
         params.OIL_REMAIN -= (hull.velocity * dt).norm() / 100000 * params.OIL_CONSUMPTION;
-    // åˆ¤æ–­è¿˜æœ‰æ²¹
+    // ÅĞ¶Ï»¹ÓĞÓÍ
     if (params.OIL_REMAIN <= 0) {
         expectSpeed = 0.;
         params.OIL_REMAIN = 0;
     }
-    // çº¦æŸä¸‹çš„æœŸæœ›é€Ÿåº¦
+    // Ô¼ÊøÏÂµÄÆÚÍûËÙ¶È
     expectSpeed = clamp(expectSpeed, speed_restriction);
-    // é€Ÿåº¦å˜åŒ–é‡
+    // ËÙ¶È±ä»¯Á¿
     double delta_speed;
-    //add by wsb:åœ¨ä¸åŒå¡åº¦é‡‡ç”¨ä¸åŒçš„åŠ é€Ÿåº¦
+    // add by wsb:ÔÚ²»Í¬ÆÂ¶È²ÉÓÃ²»Í¬µÄ¼ÓËÙ¶È
     double acceleration = params.MAX_FRONT_ACCELERATION;
     if (slope > 0.1)
         acceleration = params.MAX_CLIMBING_ACCELERATION;
@@ -169,34 +167,34 @@ void WheelMoveSystem::tick(double dt, Coordinate &baseCoordinate, Hull &hull, do
         delta_speed = clamp(expectSpeed - speed, (gravity_acceleration - acceleration / 2) * dt,
                             (gravity_acceleration + params.MAX_BRAKE_ACCELERATION) * dt);
     }
-    // small fix: å½“å‰è§’åº¦ä¸æœŸæœ›è§’åº¦å·®è·è¿‡å¤§ä¸”é€Ÿåº¦ä¸å°æ—¶ä¸åŠ é€Ÿ
+    // small fix: µ±Ç°½Ç¶ÈÓëÆÚÍû½Ç¶È²î¾à¹ı´óÇÒËÙ¶È²»Ğ¡Ê±²»¼ÓËÙ
     if (delta_speed > 0. && speed >= MIN_SPEED && fabs(exp_yaw_diff) > PI / 10) {
         delta_speed = 0.;
     }
-    // è®¡ç®—æ–°é€Ÿåº¦å’Œè§’é€Ÿåº¦
+    // ¼ÆËãĞÂËÙ¶ÈºÍ½ÇËÙ¶È
     double new_speed = speed + delta_speed;
 
-    // æ›´æ–°çŠ¶æ€
+    // ¸üĞÂ×´Ì¬
 
-    // è§’é€Ÿåº¦åªä¸é€Ÿåº¦å’Œå‰è½®è½¬è§’æœ‰å…³
+    // ½ÇËÙ¶ÈÖ»ÓëËÙ¶ÈºÍÇ°ÂÖ×ª½ÇÓĞ¹Ø
     double new_angular_speed = new_speed * angularLinearRatio(params.angle, params.LENGTH);
-    // è®¡ç®—æ–°æœå‘
+    // ¼ÆËãĞÂ³¯Ïò
     double dyaw = angular_speed * dt;
     const Vector3 new_front_direction = baseCoordinate.directionBodyToWorld(Vector3(cos(dyaw), sin(dyaw), 0.));
-    // è®¡ç®—æ–°ä½ç½®
+    // ¼ÆËãĞÂÎ»ÖÃ
     const Vector3 new_position_unlanded = baseCoordinate.position + hull.velocity * dt;
-    // æŠ•å½±åˆ°åœ°é¢
+    // Í¶Ó°µ½µØÃæ
     const Vector3 new_position = {new_position_unlanded.x, new_position_unlanded.y,
                                   -env.getAltitude(new_position_unlanded)};
-    // è®¡ç®—æ–°éšä½“åæ ‡ç³»å§¿æ€å››å…ƒæ•°
+    // ¼ÆËãĞÂËæÌå×ø±êÏµ×ËÌ¬ËÄÔªÊı
     double new_yaw = atan2(new_front_direction.y, new_front_direction.x);
     double new_pitch = atan(env.getSlope(new_position, new_front_direction));
     double new_roll = atan(env.getSlope(new_position, new_front_direction.out({0., 0., -1.})));
     const Quaternion new_altitude(new_roll, new_pitch, new_yaw);
-    // æ›´æ–°åæ ‡ç³»
+    // ¸üĞÂ×ø±êÏµ
     baseCoordinate.position = new_position;
     baseCoordinate.attitude = new_altitude.toCompressedQuaternion();
-    // æ›´æ–°é€Ÿåº¦å’Œè§’é€Ÿåº¦
+    // ¸üĞÂËÙ¶ÈºÍ½ÇËÙ¶È
     hull.velocity = baseCoordinate.directionBodyToWorld(Vector3(new_speed, 0., 0.));
     hull.palstance = baseCoordinate.directionBodyToWorld(Vector3(0., 0., new_angular_speed));
 

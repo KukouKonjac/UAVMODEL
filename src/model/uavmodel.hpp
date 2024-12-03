@@ -8,12 +8,12 @@
 #include "framework/system.hpp"
 #include "toolsystem/iosystem.hpp"
 
-namespace carphymodel{
+namespace uavmodel{
 
-class CarModel{
+class UavModel{
 public:
-    friend class CarBuilder;
-    CarModel() = default;
+    friend class UavBuilder;
+    UavModel() = default;
     using CSValueMap = std::unordered_map<std::string, std::any>;
     void tick(double dt){
         components.getSpecificSingleton<EventBuffer>()->clear();
@@ -26,17 +26,17 @@ public:
     }
     Components components;
 private:
-    CarModel(const CarModel&) = default;
+    UavModel(const UavModel&) = default;
     inline static std::vector<std::unique_ptr<System>> systems{};
 };
 
 }
 
-// class CarModel{
+// class UavModel{
 // public:
-//     friend class CarBuilder;
+//     friend class UavBuilder;
 
-//     CarModel()=default;
+//     UavModel()=default;
 //     void tick(double dt);
 
 //     //IO buffer

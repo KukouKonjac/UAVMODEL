@@ -5,7 +5,7 @@
 
 namespace test11{
 
-using namespace carphymodel::geoInfo;
+using namespace uavmodel::geoInfo;
 
 constexpr Vector3 tmp = CoordinateOrder<N, U, E>{1, 2, 3};
 

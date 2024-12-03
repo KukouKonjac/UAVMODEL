@@ -3,7 +3,7 @@
 #include <chrono>
 #include <random>
 
-namespace carphymodel {
+namespace uavmodel {
 
 /**
  * @brief return random number in [0.0, 1.0)
@@ -19,4 +19,4 @@ inline double rand() {
 
 inline bool randEvent(double prob) { return rand() < prob; }
 
-} // namespace carphymodel
+} // namespace uavmodel
