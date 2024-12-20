@@ -21,6 +21,10 @@ namespace command {
 
 enum class COMMAND_TYPE {
     FORWARD = 1,
+    CLIMB,   // 爬升
+    DIVE,//下降
+    LEVELFLIGHT,//平飞
+    HOVER,//悬停
     ACCELERATE,
     DECELERATE,
     BACKWARD,
@@ -29,12 +33,12 @@ enum class COMMAND_TYPE {
     ACCELERATE_TURN,
     DECELERATE_TURN,
     BACK_TURN,
-    SHOOT,
+    /*SHOOT,
     FREE_SHOOT,
     STOP_SHOOT,
     LOCK_DIRECTION,
     LOCK_TARGET,
-    UNLOCK,
+    UNLOCK,*/
     RADAR_SWITCH,
     FOLLOW_ROAD,
     SET_ROAD,
@@ -327,38 +331,18 @@ struct WheelMotionParamList {
     }
 };
 struct QuadrotorMotionParamList {
-    constexpr static const char* token_list[] = {"-angle", "LENGTH", "MAX_ANGLE", "ROTATE_SPEED", "MAX_LINEAR_SPEED",
-                                                 "MAX_FRONT_ACCELERATION", "MAX_BRAKE_ACCELERATION",
-                                                 "MAX_LATERAL_ACCELERATION",
-                                                 // below add by wsb
-                                                 "ELECTRICITY_REMAIN", "ELECTRICITY_CONSUMPTION", "CHARGING_TIME"};
-    // 车轮转角，右为正
-    double angle;
-    // 前后轴距
-    double LENGTH;
-    // 前轮最大转角约束
-    double MAX_ANGLE;
-    // 车轮转动速度约束
+    constexpr static const char* token_list[] = {"MAX_CLIIMB_SPEED", "MAX_DIVE_SPEED", "MAX_LEVELFLY_SPEED",
+                                                 "MAX_FLY_TIME", "ROTATE_SPEED"};
+    // 最大爬升速度
+    double MAX_CLIIMB_SPEED;
+    // 最大下降速度（垂直）
+    double MAX_DIVE_SPEED;
+    // 最大平飞速度
+    double MAX_LEVELFLY_SPEED;
+    // 最大飞行时间（单位：分钟）
+    double MAX_FLY_TIME;
+    // 最大旋转角速度
     double ROTATE_SPEED;
-    // 最大直线速度约束
-    double MAX_LINEAR_SPEED;
-    // 最大前向加速度约束
-    double MAX_FRONT_ACCELERATION;
-    // 最大减速加速度约束
-    double MAX_BRAKE_ACCELERATION;
-    // 最大转弯向心加速度(侧向加速度)约束
-    double MAX_LATERAL_ACCELERATION;
-    // 剩余油量
-    double OIL_REMAIN;
-    // 油耗,百公里耗油量
-    double OIL_CONSUMPTION;
-    // 最大爬坡加速度约束
-    double MAX_CLIMBING_ACCELERATION;
-    static WheelMotionParamList make() {
-        WheelMotionParamList tmp;
-        tmp.angle = 0;
-        return tmp;
-    }
 };
 struct HitEventQueue : public std::vector<FireEvent> {};
 

@@ -4,3 +4,5 @@ set(MODEL_SRC ${CURRENT_PROJ_SRC})
 # message(STATUS "src file:" ${MODEL_SRC})
 
 add_subdirectory(platform)
+# лМ╪свсд©б╪
+add_subdirectory(model/hull/quadrotor)

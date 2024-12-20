@@ -5,6 +5,7 @@
 #include "../tools/vector3.hpp"
 #include "uavhull.h"
 #include "wheel/wheel.h"
+#include "quadrotor/quadrotor.h"
 
 namespace {
 
@@ -12,12 +13,8 @@ using namespace uavmodel::command;
 
 constexpr size_t validMovingCommandMask =
     // COMMAND_TYPE::FORWARD,
-    size_t(1) << static_cast<int>(COMMAND_TYPE::ACCELERATE) | size_t(1) << static_cast<int>(COMMAND_TYPE::DECELERATE) |
-    size_t(1) << static_cast<int>(COMMAND_TYPE::BACKWARD) | size_t(1) << static_cast<int>(COMMAND_TYPE::STOP) |
-    size_t(1) << static_cast<int>(COMMAND_TYPE::TURN) | size_t(1) << static_cast<int>(COMMAND_TYPE::ACCELERATE_TURN) |
-    size_t(1) << static_cast<int>(COMMAND_TYPE::DECELERATE_TURN) |
-    size_t(1) << static_cast<int>(COMMAND_TYPE::BACK_TURN) | size_t(1) << static_cast<int>(COMMAND_TYPE::FOLLOW_ROAD) |
-    size_t(1) << static_cast<int>(COMMAND_TYPE::SET_ROAD);
+    size_t(1) << static_cast<int>(COMMAND_TYPE::CLIMB) | size_t(1) << static_cast<int>(COMMAND_TYPE::DIVE) |
+    size_t(1) << static_cast<int>(COMMAND_TYPE::LEVELFLIGHT) | size_t(1) << static_cast<int>(COMMAND_TYPE::HOVER);
 
 }; // namespace
 
@@ -36,7 +33,7 @@ void HullSystem::tick(double dt, Components& c) {
     return;
     }
 
-    auto& optParam = c.getSpecificSingleton<WheelMotionParamList>();
+    auto& optParam = c.getSpecificSingleton<QuadrotorMotionParamList>();
     if (!optParam.has_value()) {
         return;
     }
@@ -46,7 +43,8 @@ void HullSystem::tick(double dt, Components& c) {
     // TODO: check
     Coordinate coordinate = c.getSpecificSingleton<Coordinate>().value();
     double direction = Quaternion::fromCompressedQuaternion(coordinate.attitude).getEuler().z;
-    double speed = c.getSpecificSingleton<Hull>()->velocity.dot(coordinate.directionBodyToWorld(Vector3(1., 0., 0.)));
+    double speed = c.getSpecificSingleton<Hull>()->velocity.dot(coordinate.directionBodyToWorld(Vector3(1., 0., 0.)));//前向速度--车体速度就是前向速度
+    double height;
     for (auto&& [k, v] : c.getSpecificSingleton<CommandBuffer>().value()) {
         if ((validMovingCommandMask & size_t(1) << static_cast<int>(k)) == 0) {
             continue;
@@ -57,7 +55,7 @@ void HullSystem::tick(double dt, Components& c) {
         // } else if (k == COMMAND_TYPE::DECELERATE_TURN || k == COMMAND_TYPE::DECELERATE) {
         //     param1 = min(param1, speed);
         // }
-        auto& pathPlanningModelData = c.getSpecificSingleton<PathPlanningModel>().value();
+        /* auto& pathPlanningModelData = c.getSpecificSingleton<PathPlanningModel>().value();
         if (k == COMMAND_TYPE::FOLLOW_ROAD) {
             if (pathPlanningModelData.nextPoint == pathPlanningModelData.route.size()) {
                 // finished
@@ -100,18 +98,15 @@ void HullSystem::tick(double dt, Components& c) {
             pathPlanningModelData.route.clear();
             pathPlanningModelData.nextPoint = 1;
         }
-        if (k == COMMAND_TYPE::STOP) {
-            speed = 0.;
-        } else if (k == COMMAND_TYPE::TURN) {
-            direction = param1;
-        } else if (k == COMMAND_TYPE::ACCELERATE || k == COMMAND_TYPE::DECELERATE || k == COMMAND_TYPE::BACKWARD) {
-            speed = param1;
-        } else if (k == COMMAND_TYPE::ACCELERATE_TURN || k == COMMAND_TYPE::DECELERATE_TURN ||
-                   k == COMMAND_TYPE::BACK_TURN) {
+        */
+        if (k == COMMAND_TYPE::CLIMB || k == COMMAND_TYPE::DIVE) {
+            height = param1;
+        } else if (k == COMMAND_TYPE::LEVELFLIGHT) {
             speed = param1;
             direction = param2;
+        } else if (k == COMMAND_TYPE::HOVER) {
+            speed = 0;
         }
-        // TODO:
     }
     // size_t times = 1;
     // if (dt > 0.1) {
@@ -120,6 +115,8 @@ void HullSystem::tick(double dt, Components& c) {
     // for (size_t i = 0; i < times; ++i) {
     WheelMoveSystem::tick(dt, c.getSpecificSingleton<Coordinate>().value(), c.getSpecificSingleton<Hull>().value(),
                           direction, speed, param);
+    QuadrotorMoveSystem::tick(dt, c.getSpecificSingleton<Coordinate>().value(), c.getSpecificSingleton<Hull>().value(),
+                           direction, speed, param);
 };
 
 } // namespace uavmodel
