@@ -7,9 +7,6 @@ class PID {
     double e, e_diff, e_int;    // Error terms
     double p_out, i_out, d_out; // Output terms
     double dead_zone;
-    bool seg_linear;
-    bool fuzzy;
-    bool neural;
 
   public:
     PID(double kp = 0, double ki = 0, double kd = 0);

@@ -15,9 +15,9 @@ class UAV_Hover : public UAV {
     bool is_success() const;
     bool is_Terminal();
     void step_update(const Eigen::VectorXd& action);
+    Eigen::Vector3d target_pos, error_pos;
 
   private:
-    Eigen::Vector3d target_pos, error_pos;
 };
 
 #endif // UAV_HOVER_H

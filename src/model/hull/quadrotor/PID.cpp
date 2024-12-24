@@ -2,8 +2,7 @@
 #include <cmath>
 
 PID::PID(double kp, double ki, double kd)
-    : kp(kp), ki(ki), kd(kd), e(0), e_diff(0), e_int(0), p_out(0), i_out(0), d_out(0), dead_zone(0), seg_linear(false),
-      fuzzy(false), neural(false) {}
+    : kp(kp), ki(ki), kd(kd), e(0), e_diff(0), e_int(0), p_out(0), i_out(0), d_out(0), dead_zone(0) {}
 
 void PID::setPID(double _kp, double _ki, double _kd) {
     kp = _kp;

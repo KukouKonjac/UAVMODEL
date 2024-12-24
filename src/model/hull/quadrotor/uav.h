@@ -6,6 +6,9 @@
 #include <vector>
 #include <Eigen/Dense>
 
+#define M_PI 3.14159265358979323846
+inline double deg2rad(double deg) { return deg * M_PI / 180.0; }
+
 class UAV {
   public:
     UAV(double m = 0.8, double g = 9.8, double Jxx = 4.212e-3, double Jyy = 4.212e-3, double Jzz = 8.255e-3,
@@ -16,16 +19,13 @@ class UAV {
     bool is_out() const;
     void rk44(const Eigen::VectorXd& action);
     virtual Eigen::VectorXd ode(const Eigen::VectorXd& state);
-
-  protected:
-    // UAV physical parameters
+    Eigen::MatrixXd power_allocation_mat;
     double m, g, Jxx, Jyy, Jzz, d, CT, CM, J0, dt;
     double time, tmax;
-    Eigen::MatrixXd power_allocation_mat;
 
     // State variables
     Eigen::Vector3d pos, vel, angle, omega_inertial, omega_body;
-    Eigen::Vector3d pos_min, pos_max, vel_min, vel_max, angle_min, angle_max;
+    Eigen::Vector3d pos_min, pos_max, vel_min, vel_max, angle_min, angle_max, dangle_min, dangle_max;
     Eigen::VectorXd control_state;
 
     Eigen::Vector4d force; // Control inputs
@@ -37,6 +37,9 @@ class UAV {
     int terminal_flag;
 
     void f2omega();
+
+  protected:
+    // UAV physical parameters
 };
 
 #endif // UAV_H
