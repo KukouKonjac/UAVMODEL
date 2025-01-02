@@ -44,7 +44,7 @@ void HullSystem::tick(double dt, Components& c) {
     Coordinate coordinate = c.getSpecificSingleton<Coordinate>().value();
     double direction = Quaternion::fromCompressedQuaternion(coordinate.attitude).getEuler().z;
     double speed = c.getSpecificSingleton<Hull>()->velocity.dot(coordinate.directionBodyToWorld(Vector3(1., 0., 0.)));//前向速度--车体速度就是前向速度
-    double height;
+    double height = -2; // c.getSpecificSingleton<Coordinate>().value().position.z;
     for (auto&& [k, v] : c.getSpecificSingleton<CommandBuffer>().value()) {
         if ((validMovingCommandMask & size_t(1) << static_cast<int>(k)) == 0) {
             continue;
@@ -113,10 +113,10 @@ void HullSystem::tick(double dt, Components& c) {
     //     times = size_t(std::ceil(dt / 0.1));
     // }
     // for (size_t i = 0; i < times; ++i) {
-    WheelMoveSystem::tick(dt, c.getSpecificSingleton<Coordinate>().value(), c.getSpecificSingleton<Hull>().value(),
-                          direction, speed, param);
+    /*WheelMoveSystem::tick(dt, c.getSpecificSingleton<Coordinate>().value(), c.getSpecificSingleton<Hull>().value(),
+                          direction, speed, param);*/
     QuadrotorMoveSystem::tick(dt, c.getSpecificSingleton<Coordinate>().value(), c.getSpecificSingleton<Hull>().value(),
-                           direction, speed, param);
+                           direction, speed, height, param);
 };
 
 } // namespace uavmodel

@@ -34,10 +34,11 @@ struct NameTable {
     }
 };
 
-constexpr NameTable<WheelMotionParamList, Coordinate, DamageModel, Block, ProtectionModel, FireUnit, SensorData,
+constexpr NameTable<WheelMotionParamList, QuadrotorMotionParamList, Coordinate, DamageModel, Block, ProtectionModel, FireUnit, SensorData,
                     CommunicationData>
     nameTable{{
         "WheelMotionParamList",
+        "QuadrotorMotionParamList",
         "Coordinate",
         "DamageModel",
         "Block",
@@ -188,7 +189,7 @@ void UavBuilder::buildFromSource(const std::string& srcXML, UavModel& model, boo
     xml_document<> doc;
     CStyleString s(srcXML);
     doc.parse<parse_default>(s.s);
-    auto root = doc.first_node("uav");
+    auto root = doc.first_node("car");
 
     if (auto handle = model.components.getModifier()) {
         handle.addSingletonComponents<CommandBuffer, EventBuffer, DamageModel, Coordinate, HitEventQueue,
@@ -197,6 +198,7 @@ void UavBuilder::buildFromSource(const std::string& srcXML, UavModel& model, boo
         handle.addSingletonComponents<SID, VID>(0, 0);
 
         loadComponent<SingletonComponent<WheelMotionParamList>>::load(root, handle);
+        loadComponent<SingletonComponent<QuadrotorMotionParamList>>::load(root, handle);
         //add by wsb
         loadComponent<SingletonComponent<DamageModel>>::load(root, handle);
 

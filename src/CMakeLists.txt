@@ -5,4 +5,4 @@ set(MODEL_SRC ${CURRENT_PROJ_SRC})
 
 add_subdirectory(platform)
 # лМ╪свсд©б╪
-add_subdirectory(model/hull/quadrotor)
+#add_subdirectory(model/hull/quadrotor)

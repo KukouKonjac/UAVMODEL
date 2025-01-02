@@ -7,8 +7,8 @@ namespace test02{
 
 int test_main(){
     using namespace std;
-    CarModel m;
-    CarBuilder builder;
+    UavModel m;
+    UavBuilder builder;
     builder.buildFromFile(__FILE__ + "/../../src/config/exampleCarV2.xml"s, m);
     //断点查看结果
     return 0;

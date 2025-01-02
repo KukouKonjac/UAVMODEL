@@ -3,6 +3,7 @@
 #include "framework/pattern.hpp"
 #include "tools/vector3.hpp"
 #include <memory>
+#include <vector>
 
 
 namespace uavmodel {

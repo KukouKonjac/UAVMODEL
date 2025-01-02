@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <variant>
 #include <vector>
+#include <Eigen/Dense>
 
 #include "../framework/componentmanager.hpp"
 #include "coordinate.hpp"
@@ -47,21 +48,21 @@ enum class COMMAND_TYPE {
 };
 
 inline size_t NoParamMask =
-    size_t(1) << static_cast<int>(COMMAND_TYPE::FORWARD) | size_t(1) << static_cast<int>(COMMAND_TYPE::STOP) |
-    size_t(1) << static_cast<int>(COMMAND_TYPE::FREE_SHOOT) | size_t(1) << static_cast<int>(COMMAND_TYPE::STOP_SHOOT);
+    size_t(1) << static_cast<int>(COMMAND_TYPE::FORWARD) | size_t(1) << static_cast<int>(COMMAND_TYPE::STOP)
+    /*size_t(1) << static_cast<int>(COMMAND_TYPE::FREE_SHOOT) | size_t(1) << static_cast<int>(COMMAND_TYPE::STOP_SHOOT)*/;
 
 inline size_t SingleParamMask =
     size_t(1) << static_cast<int>(COMMAND_TYPE::ACCELERATE) | size_t(1) << static_cast<int>(COMMAND_TYPE::DECELERATE) |
     size_t(1) << static_cast<int>(COMMAND_TYPE::BACKWARD) | size_t(1) << static_cast<int>(COMMAND_TYPE::TURN) |
-    size_t(1) << static_cast<int>(COMMAND_TYPE::FOLLOW_ROAD) | size_t(1) << static_cast<int>(COMMAND_TYPE::UNLOCK) |
+    size_t(1) << static_cast<int>(COMMAND_TYPE::FOLLOW_ROAD) | /*size_t(1) << static_cast<int>(COMMAND_TYPE::UNLOCK) |*/
     size_t(1) << static_cast<int>(COMMAND_TYPE::ACTIVATE_INTERFERE);
 
 inline size_t DoubleParamMask = size_t(1) << static_cast<int>(COMMAND_TYPE::ACCELERATE_TURN) |
                                 size_t(1) << static_cast<int>(COMMAND_TYPE::DECELERATE_TURN) |
                                 size_t(1) << static_cast<int>(COMMAND_TYPE::BACK_TURN) |
-                                size_t(1) << static_cast<int>(COMMAND_TYPE::SHOOT) |
+                                /*size_t(1) << static_cast<int>(COMMAND_TYPE::SHOOT) |
                                 size_t(1) << static_cast<int>(COMMAND_TYPE::LOCK_DIRECTION) |
-                                size_t(1) << static_cast<int>(COMMAND_TYPE::LOCK_TARGET) |
+                                size_t(1) << static_cast<int>(COMMAND_TYPE::LOCK_TARGET) |*/
                                 size_t(1) << static_cast<int>(COMMAND_TYPE::RADAR_SWITCH) | 
                                 size_t(1) << static_cast<int>(COMMAND_TYPE::SET_ROAD)/*|
                                 size_t(1) << static_cast<int>(COMMAND_TYPE::REPAIR)*/;
@@ -331,8 +332,13 @@ struct WheelMotionParamList {
     }
 };
 struct QuadrotorMotionParamList {
-    constexpr static const char* token_list[] = {"MAX_CLIIMB_SPEED", "MAX_DIVE_SPEED", "MAX_LEVELFLY_SPEED",
-                                                 "MAX_FLY_TIME", "ROTATE_SPEED"};
+    constexpr static const char* token_list[] = {"MAX_CLIIMB_SPEED",
+                                                 "MAX_DIVE_SPEED",
+                                                 "MAX_LEVELFLY_SPEED",
+                                                 "MAX_FLY_TIME",
+                                                 "ROTATE_SPEED",
+                                                 "LENGTH_D",
+                                                 "F_MAX"};
     // 最大爬升速度
     double MAX_CLIIMB_SPEED;
     // 最大下降速度（垂直）
@@ -343,6 +349,34 @@ struct QuadrotorMotionParamList {
     double MAX_FLY_TIME;
     // 最大旋转角速度
     double ROTATE_SPEED;
+    //升力系数
+    double CT;
+    //力矩系数
+    double CM;
+    //机臂长度
+    double LENGTH_D;
+    //最大力
+    double F_MAX;
+    //待定
+    Eigen::Vector4d force;
+    Eigen::Vector4d w_rotor;
+    double J0;
+    double JXX;
+    double JYY;
+    double JZZ;
+    double M;
+    static QuadrotorMotionParamList make() {
+        QuadrotorMotionParamList tmp;
+        tmp.J0 = 1.01e-5;
+        tmp.JXX = 4.212e-3;
+        tmp.JYY = 4.212e-3;
+        tmp.JZZ = 8.255e-3;
+        tmp.M = 0.8;
+        tmp.CT = 2.168e-6;
+        tmp.CM = 2.136e-8;
+        return tmp;
+    }
+    
 };
 struct HitEventQueue : public std::vector<FireEvent> {};
 
@@ -360,7 +394,7 @@ struct PathPlanningModel {
 
 using Components =
     ComponentManager<SingletonComponent<Coordinate, DamageModel, CommandBuffer, EventBuffer, HitEventQueue, FireEventQueue,
-                       WheelMotionParamList, ScannedMemory, Sphere, Hull, SID, VID, PathPlanningModel, SystemScannedMemory, SystemScannedMemoryget>,
+                       WheelMotionParamList, QuadrotorMotionParamList ,ScannedMemory, Sphere, Hull, SID, VID, PathPlanningModel, SystemScannedMemory, SystemScannedMemoryget>,
     NormalComponent<Coordinate, DamageModel, Block, ProtectionModel, FireUnit, SensorData, CommunicationData>>;
 
 }; // namespace uavmodel

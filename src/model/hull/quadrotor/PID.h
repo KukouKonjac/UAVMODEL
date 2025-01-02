@@ -17,4 +17,4 @@ class PID {
     void reset();
 };
 
-#endif // PID_HPP
+#endif // PID_H

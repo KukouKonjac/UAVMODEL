@@ -3,10 +3,10 @@
 
 #include "../basetest.h"
 int main() {
-    int testmode = 2;
+    int testmode = 5;
     using namespace std;
     uavmodel::UavModel model;
-    buildBaseModel("D:\\cqmodel\\v\\tank\\car.xml", model);
+    buildBaseModel("D:\\cqmodel\\v\\uav\\uav.xml", model);
     auto& buffer = model.components.getSpecificSingleton<uavmodel::CommandBuffer>().value();
     int flag = 0;
     //测试维修保障指标/最大速度/加速时间-------------------------------
@@ -105,6 +105,28 @@ int main() {
                      << "km" << endl;
                 break;
             }
+        }
+    } 
+    else if(testmode == 5) //测试无人机运动平台模型
+    {
+        /*buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(4), any(tuple<double, double>(20, PI / 4)));
+        model.tick(0.01);
+        for (int i = 0; i < 1000; ++i) {
+            buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(4), any(tuple<double, double>(20, PI / 4)));
+            model.tick(0.01);
+            std::cout << "Position Error: " << uavmodel::Vector3{100, 100, 0} - model.components.getSpecificSingleton<uavmodel::Coordinate>().value().position << std::endl;
+            std::cout << "Velocity " << model.components.getSpecificSingleton<uavmodel::Hull>().value().velocity.x<< "m/s" << std::endl;
+            std::cout << "height" << model.components.getSpecificSingleton<uavmodel::Coordinate>().value().position.z << "m" << std::endl;
+            std::cout << "time " << 0.01 * i << "s" << std::endl;
+        }*/
+        for (int i = 0; i < 1000; ++i) {
+            buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(2), any(tuple<double, double>(20, PI / 4)));
+            model.tick(0.01);
+            std::cout << "Velocity " << model.components.getSpecificSingleton<uavmodel::Hull>().value().velocity.x
+                      << "m/s" << std::endl;
+            std::cout << "height" << model.components.getSpecificSingleton<uavmodel::Coordinate>().value().position.z * -1 
+                      << "m" << std::endl;
+            std::cout << "time " << 0.01 * i << "s" << std::endl;
         }
     }
     return 0;

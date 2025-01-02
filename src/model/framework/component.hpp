@@ -282,6 +282,18 @@ inline WheelMotionParamList componentDeserialize<WheelMotionParamList>(rapidxml:
     return tmp;
 }
 
+template <>
+inline QuadrotorMotionParamList componentDeserialize<QuadrotorMotionParamList>(rapidxml::xml_node<char>* node) {
+    QuadrotorMotionParamList tmp = QuadrotorMotionParamList::make();
+    tmp.MAX_CLIIMB_SPEED = componentDeserialize<double>(node->first_node("MAX_CLIIMB_SPEED"));
+    tmp.MAX_DIVE_SPEED = componentDeserialize<double>(node->first_node("MAX_DIVE_SPEED"));
+    tmp.MAX_LEVELFLY_SPEED = componentDeserialize<double>(node->first_node("MAX_LEVELFLY_SPEED"));
+    tmp.MAX_FLY_TIME = componentDeserialize<double>(node->first_node("MAX_FLY_TIME"));
+    tmp.ROTATE_SPEED = componentDeserialize<double>(node->first_node("ROTATE_SPEED"));
+    tmp.LENGTH_D = componentDeserialize<double>(node->first_node("LENGTH_D"));
+    tmp.F_MAX = componentDeserialize<double>(node->first_node("F_MAX"));
+    return tmp;
+}
 // template<typename T>
 // inline std::vector<T> componentDeserialize<std::vector<T>>(rapidxml::xml_node<char>* node){
 //     std::vector<T> tmp;

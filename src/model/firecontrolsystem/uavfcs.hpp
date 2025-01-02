@@ -47,10 +47,10 @@ class FireControlSystem : public System {
         using namespace std;
 
         const static map<COMMAND_TYPE, FIRE_UNIT_STATE> commands{
-            {COMMAND_TYPE::SHOOT, FIRE_UNIT_STATE::SINGLE_SHOOT},
+            /*{COMMAND_TYPE::SHOOT, FIRE_UNIT_STATE::SINGLE_SHOOT},
             {COMMAND_TYPE::LOCK_DIRECTION, FIRE_UNIT_STATE::LOCK_DIRECTION},
             {COMMAND_TYPE::LOCK_TARGET, FIRE_UNIT_STATE::LOCK_TARGET},
-            {COMMAND_TYPE::UNLOCK, FIRE_UNIT_STATE::FREE},
+            {COMMAND_TYPE::UNLOCK, FIRE_UNIT_STATE::FREE},*/
         };
 
         for (auto& [k, v] : c.getSpecificSingleton<CommandBuffer>().value()) {
@@ -59,7 +59,7 @@ class FireControlSystem : public System {
                 auto& tmp = getNthFireUnit((size_t)index, c);
                 tmp.state = it->second;
                 tmp.data = param;
-            } else if (k == COMMAND_TYPE::FREE_SHOOT) {
+            } /*else if (k == COMMAND_TYPE::FREE_SHOOT) {
                 for (auto&& [id, fireUnit] : c.getNormal<FireUnit>()) {
                     if (fireUnit.state == FIRE_UNIT_STATE::FREE || fireUnit.state == FIRE_UNIT_STATE::LOCK_DIRECTION ||
                         fireUnit.state == FIRE_UNIT_STATE::SEEK_TARGET) {
@@ -74,7 +74,7 @@ class FireControlSystem : public System {
                     fireUnit.state = FIRE_UNIT_STATE::FREE;
                 }
                 break;
-            }
+            }*/
         }
     }
     std::set<FireUnit*> updateFireUnitState(double dt, Components& c) {
