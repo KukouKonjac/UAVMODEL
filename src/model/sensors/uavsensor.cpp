@@ -16,13 +16,13 @@ using namespace uavmodel::command;
 
 void SensorSystem::tick(double dt, Components& c)
 {
-    double& jammer = get<1>(*c.getNormal<ProtectionModel>().begin()).jammer;//约定第一个entity反映整体特征
-    for (auto&& [k, v] : c.getSpecificSingleton<CommandBuffer>().value()) {
-        auto [param1, param2] = any_cast<std::tuple<double, double>>(v);
-        if (k == COMMAND_TYPE::ACTIVATE_INTERFERE) {
-        jammer = param1;
-        }
-    }
+    //double& jammer = get<1>(*c.getNormal<ProtectionModel>().begin()).jammer;//约定第一个entity反映整体特征
+    //for (auto&& [k, v] : c.getSpecificSingleton<CommandBuffer>().value()) {
+    //    auto [param1, param2] = any_cast<std::tuple<double, double>>(v);
+    //    if (k == COMMAND_TYPE::ACTIVATE_INTERFERE) {
+    //    jammer = param1;
+    //    }
+    //}
     auto& mem = c.getSpecificSingleton<ScannedMemory>().value();
     auto& baseCoordinate = c.getSpecificSingleton<Coordinate>().value();
     auto& hull = c.getSpecificSingleton<Hull>().value();
@@ -44,8 +44,7 @@ void SensorSystem::tick(double dt, Components& c)
         auto sensor = SensorFactory::getProduct(_sensor.type);
         for(auto&& [vid, _entityInfo] : mem){
             if(std::get<0>(_entityInfo) != 0. && 
-                sensor->isDetectable(baseCoordinate, std::get<1>(_entityInfo), _sensor, hull))
-            {
+                sensor->isDetectable(baseCoordinate, std::get<1>(_entityInfo), _sensor, hull)){
                 std::get<0>(_entityInfo) = 0.;
             }
         }

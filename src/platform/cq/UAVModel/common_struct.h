@@ -17,6 +17,7 @@ class BaseInfo {
         value.emplace("hidden", hidden);
         value.emplace("active_interference_rate", active_interference_rate);
         value.emplace("active_interference_distance", active_interference_distance);
+        value.emplace("platoonid", platoonid);
         return value;
     }
 
@@ -38,6 +39,8 @@ class BaseInfo {
                 active_interference_rate = std::any_cast<double>(it.second);
             if (it.first == "active_interference_distance")
                 active_interference_distance = std::any_cast<double>(it.second);
+            if (it.first == "platoonid")
+                platoonid = std::any_cast<uint64_t>(it.second);
         }
     }
 
@@ -51,6 +54,7 @@ class BaseInfo {
             .hidden = hidden,
             .active_interference_rate = active_interference_rate,
             .active_interference_distance = active_interference_distance,
+            .platoonid = platoonid
         };
     }
 
@@ -66,6 +70,7 @@ class BaseInfo {
     double hidden;
     double active_interference_rate;
     double active_interference_distance;
+    uint64_t platoonid;
 };
 
 // Vector3

@@ -285,13 +285,20 @@ inline WheelMotionParamList componentDeserialize<WheelMotionParamList>(rapidxml:
 template <>
 inline QuadrotorMotionParamList componentDeserialize<QuadrotorMotionParamList>(rapidxml::xml_node<char>* node) {
     QuadrotorMotionParamList tmp = QuadrotorMotionParamList::make();
-    tmp.MAX_CLIIMB_SPEED = componentDeserialize<double>(node->first_node("MAX_CLIIMB_SPEED"));
+    tmp.MAX_CLIMB_SPEED = componentDeserialize<double>(node->first_node("MAX_CLIMB_SPEED"));
     tmp.MAX_DIVE_SPEED = componentDeserialize<double>(node->first_node("MAX_DIVE_SPEED"));
     tmp.MAX_LEVELFLY_SPEED = componentDeserialize<double>(node->first_node("MAX_LEVELFLY_SPEED"));
     tmp.MAX_FLY_TIME = componentDeserialize<double>(node->first_node("MAX_FLY_TIME"));
     tmp.ROTATE_SPEED = componentDeserialize<double>(node->first_node("ROTATE_SPEED"));
     tmp.LENGTH_D = componentDeserialize<double>(node->first_node("LENGTH_D"));
     tmp.F_MAX = componentDeserialize<double>(node->first_node("F_MAX"));
+    tmp.CM = componentDeserialize<double>(node->first_node("CM"));
+    tmp.CT = componentDeserialize<double>(node->first_node("CT"));
+    tmp.J0 = componentDeserialize<double>(node->first_node("J0"));
+    tmp.JXX = componentDeserialize<double>(node->first_node("JXX"));
+    tmp.JYY = componentDeserialize<double>(node->first_node("JYY"));
+    tmp.JZZ = componentDeserialize<double>(node->first_node("JZZ"));
+    tmp.M = componentDeserialize<double>(node->first_node("M"));
     return tmp;
 }
 // template<typename T>

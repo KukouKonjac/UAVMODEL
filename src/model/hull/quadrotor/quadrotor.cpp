@@ -1,24 +1,23 @@
-#include <string>
+ï»¿#include <string>
 
 #include "../../tools/constant.hpp"
 #include "../../tools/myassert.hpp"
 #include "quadrotor.h"
 #include "uav_hover.h"
 
-// ¶¨Òå¾²Ì¬³ÉÔ±±äÁ¿
-PID uavmodel::QuadrotorMoveSystem::pid_vx(0.7, 0.0, 0.5);
-PID uavmodel::QuadrotorMoveSystem::pid_vy(0.7, 0.0, 0.5);
-PID uavmodel::QuadrotorMoveSystem::pid_z(0.7, 0.00001, 200);
-PID uavmodel::QuadrotorMoveSystem::pid_phi(0.5, 0.0, 20.0);
-PID uavmodel::QuadrotorMoveSystem::pid_theta(0.5, 0.0, 20.0);
+// å®šä¹‰é™æ€æˆå‘˜å˜é‡
+PID uavmodel::QuadrotorMoveSystem::pid_vx(0.5, 0.0000, 0);
+PID uavmodel::QuadrotorMoveSystem::pid_vy(0.5, 0.0000, 0);
+PID uavmodel::QuadrotorMoveSystem::pid_z(1, 0.0, 50);
+PID uavmodel::QuadrotorMoveSystem::pid_phi(0.5, 0.01, 5.0);
+PID uavmodel::QuadrotorMoveSystem::pid_theta(0.5, 0.01, 5.0);
 PID uavmodel::QuadrotorMoveSystem::pid_psi(0.1, 0.0, 10.0);
-
 
 namespace {
 
 using namespace uavmodel;
 
-// Í¶Éäµ½¸ø¶¨·¶Î§ÄÚ
+// æŠ•å°„åˆ°ç»™å®šèŒƒå›´å†…
 double clamp(double value, double min, double max) {
     if (value < min)
         value = min;
@@ -46,10 +45,10 @@ double softClamp(double value, double min, double max) {
     return softClamp(value - mid, max - mid) + mid;
 }
 
-// »ñÈ¡µ±Ç°×ª½ÇÊ±½ÇËÙ¶ÈÓëËÙ¶È±ÈÀı
+// è·å–å½“å‰è½¬è§’æ—¶è§’é€Ÿåº¦ä¸é€Ÿåº¦æ¯”ä¾‹
 double angularLinearRatio(double rad, double LENGTH) { return tan(rad) / LENGTH; }
 
-// »ñÈ¡·ûºÅ
+// è·å–ç¬¦å·
 int sign(double value) {
     if (value > INF_SMALL)
         return 1;
@@ -73,8 +72,9 @@ bool equal(double a, double b) { return fabs(a - b) < INF_SMALL; }
 
 namespace uavmodel {
 
+// æ±‚å¾®åˆ†
 Eigen::VectorXd QuadrotorMoveSystem::ode(const Eigen::VectorXd& state, QuadrotorMotionParamList& params) {
-    // ×´Ì¬ÏòÁ¿ state °üº¬ 12 ¸öÔªËØ£ºÎ»ÖÃ (x, y, z)£¬ËÙ¶È (vx, vy, vz)£¬×ËÌ¬½Ç (roll, pitch, yaw)£¬½ÇËÙ¶È (p, q, r)
+    // çŠ¶æ€å‘é‡ state åŒ…å« 12 ä¸ªå…ƒç´ ï¼šä½ç½® (x, y, z)ï¼Œé€Ÿåº¦ (vx, vy, vz)ï¼Œå§¿æ€è§’ (roll, pitch, yaw)ï¼Œè§’é€Ÿåº¦ (p, q, r)
     double CT = params.CT;
     double CM = params.CM;
     double d = params.LENGTH_D;
@@ -86,7 +86,7 @@ Eigen::VectorXd QuadrotorMoveSystem::ode(const Eigen::VectorXd& state, Quadrotor
     double Jzz = params.JZZ;
     double J0 = params.J0;
     double m = params.M;
-    // ´Ó×´Ì¬ÏòÁ¿ÖĞÌáÈ¡±äÁ¿
+    // ä»çŠ¶æ€å‘é‡ä¸­æå–å˜é‡
     double _x = state(0), _y = state(1), _z = state(2);
     double _vx = state(3), _vy = state(4), _vz = state(5);
     double _phi = state(6), _theta = state(7), _psi = state(8);
@@ -100,7 +100,7 @@ Eigen::VectorXd QuadrotorMoveSystem::ode(const Eigen::VectorXd& state, Quadrotor
 
     Eigen::Vector4d square_w = w_rotor.array().square();
 
-    // 1. ÎŞÈË»úÈÆ»úÌåÏµĞı×ªµÄ½ÇËÙ¶È p, q, r µÄÎ¢·Ö·½³Ì
+    // 1. æ— äººæœºç»•æœºä½“ç³»æ—‹è½¬çš„è§’é€Ÿåº¦ p, q, r çš„å¾®åˆ†æ–¹ç¨‹
     double dp = (CT * d / sqrt(2.0) * (square_w.dot(Eigen::Vector4d(1, -1, -1, 1))) + (Jyy - Jzz) * _q * _r -
                  J0 * _q * (w_rotor(0) - w_rotor(1) + w_rotor(2) - w_rotor(3))) /
                 Jxx;
@@ -111,72 +111,62 @@ Eigen::VectorXd QuadrotorMoveSystem::ode(const Eigen::VectorXd& state, Quadrotor
 
     double dr = (CM * (square_w.dot(Eigen::Vector4d(-1, 1, -1, 1))) + (Jxx - Jyy) * _p * _q) / Jzz;
 
-    // 2. ÎŞÈË»úÔÚ¹ßĞÔÏµÏÂµÄ×ËÌ¬½Ç phi, theta, psi µÄÎ¢·Ö·½³Ì
+    // 2. æ— äººæœºåœ¨æƒ¯æ€§ç³»ä¸‹çš„å§¿æ€è§’ phi, theta, psi çš„å¾®åˆ†æ–¹ç¨‹
     Eigen::Matrix3d R_pqr2diner;
     R_pqr2diner << 1, tan(_theta) * sin(_phi), tan(_theta) * cos(_phi), 0, cos(_phi), -sin(_phi), 0,
         sin(_phi) / cos(_theta), cos(_phi) / cos(_theta);
 
     Eigen::Vector3d d_angles = R_pqr2diner * Eigen::Vector3d(_p, _q, _r);
 
-    // 3. ÎŞÈË»úÔÚ¹ßĞÔÏµÏÂµÄÎ»ÖÃºÍËÙ¶ÈµÄÎ¢·Ö·½³Ì
+    // 3. æ— äººæœºåœ¨æƒ¯æ€§ç³»ä¸‹çš„ä½ç½®å’Œé€Ÿåº¦çš„å¾®åˆ†æ–¹ç¨‹
     double dvx = _f / m * (cos(_psi) * sin(_theta) * cos(_phi) + sin(_psi) * sin(_phi));
     double dvy = _f / m * (sin(_psi) * sin(_theta) * cos(_phi) - cos(_psi) * sin(_phi));
     double dvz = -9.8 + _f / m * cos(_phi) * cos(_theta);
 
-    // Ìî³äµ¼ÊıÏòÁ¿
-    dx.segment<3>(0) << _vx, _vy, _vz; // Î»ÖÃµ¼Êı£¨ËÙ¶È£©
-    dx.segment<3>(3) << dvx, dvy, dvz; // ËÙ¶Èµ¼Êı
-    dx.segment<3>(6) << d_angles;      // ×ËÌ¬½Çµ¼Êı
-    dx.segment<3>(9) << dp, dq, dr;    // ½ÇËÙ¶Èµ¼Êı
+    // å¡«å……å¯¼æ•°å‘é‡
+    dx.segment<3>(0) << _vx, _vy, _vz; // ä½ç½®å¯¼æ•°ï¼ˆé€Ÿåº¦ï¼‰
+    dx.segment<3>(3) << dvx, dvy, dvz; // é€Ÿåº¦å¯¼æ•°
+    dx.segment<3>(6) << d_angles;      // å§¿æ€è§’å¯¼æ•°
+    dx.segment<3>(9) << dp, dq, dr;    // è§’é€Ÿåº¦å¯¼æ•°
 
     return dx;
 }
 
-// ¸÷ÖÖÏŞÖÆµ¼ÖÂµÄËÙ¶È¼õĞ¡²»»áĞ¡ÓÚ¸ÃËÙ¶È£¬±ÜÃâÍ£³µ
-constexpr inline double MIN_SPEED = 3.;
+// é‡‡ç”¨å‰å³ä¸‹åæ ‡ç³»ï¼Œé€Ÿåº¦å’Œè½¬è§’åˆ†åˆ«æ§åˆ¶ä»¥æ”¯æŒåŸåœ°è½¬æ–¹å‘ç›˜ã€ç¼“æ…¢è½¬å¼¯ã€è¡Œè¿›ä¸­å˜å‘ç­‰æ“ä½œ
+// ç”±äºåŠ¨åŠ›å­¦ä¹‹ä¸Šä¼šé‡‡ç”¨æ§åˆ¶å™¨ï¼Œæ— éœ€è€ƒè™‘æ˜¾å¼æ¬§æ‹‰æ³•çš„ä¸ç¨³å®šé—®é¢˜ï¼Œå‡ºäºç®€å•è€ƒè™‘ç›´æ¥ä½¿ç”¨æ˜¾å¼æ¬§æ‹‰æ³•ï¼ˆæ— äººæœºé‡‡ç”¨å››é˜¶é¾™æ ¼åº“å¡”æ³•ï¼‰
 
-
-// ²ÉÓÃÇ°ÓÒÏÂ×ø±êÏµ£¬ËÙ¶ÈºÍ×ª½Ç·Ö±ğ¿ØÖÆÒÔÖ§³ÖÔ­µØ×ª·½ÏòÅÌ¡¢»ºÂı×ªÍä¡¢ĞĞ½øÖĞ±äÏòµÈ²Ù×÷
-// ÓÉÓÚ¶¯Á¦Ñ§Ö®ÉÏ»á²ÉÓÃ¿ØÖÆÆ÷£¬ÎŞĞè¿¼ÂÇÏÔÊ½Å·À­·¨µÄ²»ÎÈ¶¨ÎÊÌâ£¬³öÓÚ¼òµ¥¿¼ÂÇÖ±½ÓÊ¹ÓÃÏÔÊ½Å·À­·¨
-
-// Ó°ÏìÒòËØ£º
-// Ç°ÂÖ×ªÏò£º1. ×î´ó×ª½Ç 2. ×î´ó×ª¶¯ËÙ¶È 3. ×î´ó²àÏò¼ÓËÙ¶È 4. µ½´ïÄ¿±ê·½ÏòÊ±ÄÜ»ØÕı
-// ËÙ¶È£º1. ×î´óÖ±ÏßËÙ¶È 2. ×î´ó¼õËÙ¼ÓËÙ¶È 3. ×î´ó²àÏò¼ÓËÙ¶È 4. ×î´óÇ°½ø¼ÓËÙ¶È 5.
-// ÆÂ¶È´øÀ´µÄÖØÁ¦¼ÓËÙ¶È·ÖÁ¿
-
-// ÓÉÓÚÇ°ÂÖ×ªÏòĞèÒªÊ±¼ä£¬¹ÊËÙ¶ÈÒ²ĞèÒªÊÜ×î´ó²àÏò¼ÓËÙ¶ÈÔ¼Êø
-// ¿ØÖÆ·½·¨£º·ûºÏÉÏÊöÔ¼ÊøµÄÌõ¼şÏÂ¾¡¿ÉÄÜ¿ìËÙµØÏòÄ¿±êµ÷Õû£¨ÎŞÈË»ú¿¼ÂÇÏàÍ¬£¬ºóĞø¿´ÈçºÎÓÃ¶¯Á¦Ñ§·½·¨¼ÆËã×ËÌ¬½Ç£©
-void QuadrotorMoveSystem::tick(double dt, Coordinate& baseCoordinate, Hull& hull, double expectYaw, double expectSpeed, double expectHeight,
-                           QuadrotorMotionParamList& params) {
+// æ§åˆ¶æ–¹æ³•ï¼šç¬¦åˆä¸Šè¿°çº¦æŸçš„æ¡ä»¶ä¸‹å°½å¯èƒ½å¿«é€Ÿåœ°å‘ç›®æ ‡è°ƒæ•´ï¼ˆæ— äººæœºpidæ§åˆ¶ï¼Œç”¨åŠ¨åŠ›å­¦æ–¹æ³•è®¡ç®—å§¿æ€è§’ï¼‰
+void QuadrotorMoveSystem::tick(double dt, Coordinate& baseCoordinate, Hull& hull, double expectYaw, double expectSpeed,
+                               double expectHeight, QuadrotorMotionParamList& params) {
     double CT = params.CT, d = params.LENGTH_D, CM = params.CM, m = params.M, g = 9.8;
     uavmodel::Vector3 temp_rotation = Quaternion::fromCompressedQuaternion(baseCoordinate.attitude).getEuler();
     uavmodel::Vector3 temp_palstance = baseCoordinate.directionWorldToBody(hull.palstance);
-    // ÊäÈëÎªÆÚÍû·½Ïò¡¢ÆÚÍûËÙ¶È£¬Éè¼Æpid¿ØÖÆÆ÷£¬¼ÆËã³öÆÚÍûµç»ú×ªËÙ£¬ÊäÈëµ½ËÄĞıÒí¶¯Á¦Ñ§Ä£ĞÍÖĞ¼ÆËãĞÂµÄÎ»ÖÃ¡¢ËÙ¶È¡¢×ËÌ¬
-    // 1.ËÄ¸ö¿ØÖÆÁ¿£¬¿ØÖÆÏµÍ³µÄÊä³ö
-    // ÆÚÍûËÙ¶ÈºÍ·½Ïò
-    expectSpeed = 20;
-    expectYaw = PI / 4;
-    double v_ref_magnitude = expectSpeed;             // ÆÚÍûËÙ¶È´óĞ¡
-    Eigen::Vector3d v_ref_direction(cos(expectYaw), sin(expectYaw), 0); // ÆÚÍû·½Ïò
-    //v_ref_direction.normalize();
+    // è¾“å…¥ä¸ºæœŸæœ›æ–¹å‘ã€æœŸæœ›é€Ÿåº¦ï¼Œè®¾è®¡pidæ§åˆ¶å™¨ï¼Œè®¡ç®—å‡ºæœŸæœ›ç”µæœºè½¬é€Ÿï¼Œè¾“å…¥åˆ°å››æ—‹ç¿¼åŠ¨åŠ›å­¦æ¨¡å‹ä¸­è®¡ç®—æ–°çš„ä½ç½®ã€é€Ÿåº¦ã€å§¿æ€
+    // 1.å››ä¸ªæ§åˆ¶é‡ï¼Œæ§åˆ¶ç³»ç»Ÿçš„è¾“å‡º
+    // æœŸæœ›é€Ÿåº¦å’Œæ–¹å‘
+    double speed_restriction_level = params.MAX_LEVELFLY_SPEED; // æœ€å¤§å¹³é£é€Ÿåº¦é™åˆ¶
+
+    double v_ref_magnitude = clamp(expectSpeed, speed_restriction_level); // æœŸæœ›é€Ÿåº¦å¤§å°
+    Eigen::Vector3d v_ref_direction(cos(expectYaw), sin(expectYaw), 0);   // æœŸæœ›æ–¹å‘
+    // v_ref_direction.normalize();
     Eigen::Vector3d v_ref = v_ref_direction * v_ref_magnitude;
-
-    double psi_ref = expectYaw; // std::atan2(v_ref_direction(1), v_ref_direction(0)); // Æ«º½½Ç¼ÆËã
-
-    // ËÙ¶ÈÎó²î¼ÆËã
-    Eigen::Vector3d e_v = {v_ref(0) - hull.velocity.x, v_ref(1) - hull.velocity.y, 0};//zÖá²»Ö±½Ó¿ØÖÆËÙ¶È£¬¿ØÖÆ¸ß¶È
-    double e_z = expectHeight + baseCoordinate.position.z;//±±¶«µØ×ø±êÏµ
+    double psi_ref = expectYaw; // std::atan2(v_ref_direction(1), v_ref_direction(0)); // åèˆªè§’è®¡ç®—
+    // é€Ÿåº¦è¯¯å·®è®¡ç®—
+    Eigen::Vector3d e_v = {v_ref(0) - hull.velocity.x, v_ref(1) - hull.velocity.y, 0}; // zè½´ä¸ç›´æ¥æ§åˆ¶é€Ÿåº¦ï¼Œæ§åˆ¶é«˜åº¦
+    double e_z = expectHeight + baseCoordinate.position.z;                             // åŒ—ä¸œåœ°åæ ‡ç³»
     pid_vx.setError(e_v(0));
     pid_vy.setError(e_v(1));
     pid_z.setError(e_z);
     double ux = pid_vx.computeOutput();
     double uy = pid_vy.computeOutput();
     double uz = pid_z.computeOutput();
-    // ¼ÆËãÆÚÍû×ËÌ¬
+    uz = std::max((-1 * params.MAX_DIVE_SPEED + hull.velocity.z) / dt,
+                  std::min((params.MAX_CLIMB_SPEED + hull.velocity.z) / dt, uz));
+    // è®¡ç®—æœŸæœ›å§¿æ€
     double U1 = m * std::sqrt(ux * ux + uy * uy + (uz + g) * (uz + g));
     double phi_ref = std::asin(m * (ux * std::sin(psi_ref) - uy * std::cos(psi_ref)) / U1);
     double theta_ref = std::asin(m * (ux * std::cos(psi_ref) + uy * std::sin(psi_ref)) / (U1 * std::cos(phi_ref)));
-    // ×ËÌ¬Îó²î¼ÆËã
+    // å§¿æ€è¯¯å·®è®¡ç®—
     double e_phi = phi_ref - temp_rotation.x;
     double e_theta = theta_ref - temp_rotation.y;
     double e_psi = psi_ref - temp_rotation.z;
@@ -187,51 +177,84 @@ void QuadrotorMoveSystem::tick(double dt, Coordinate& baseCoordinate, Hull& hull
     double U2 = pid_phi.computeOutput();
     double U3 = pid_theta.computeOutput();
     double U4 = pid_psi.computeOutput();
-    // 2.¶¯Á¦·ÖÅä¾ØÕó£¬ºóĞøÔÚĞòÁĞ»¯ÀïÖ±½Ó¼ÆËãÒ»´Î£¬ÕâÀï»áÒ»Ö±¼ÆËã
+    // 2.åŠ¨åŠ›åˆ†é…çŸ©é˜µï¼Œåç»­åœ¨åºåˆ—åŒ–é‡Œç›´æ¥è®¡ç®—ä¸€æ¬¡ï¼Œè¿™é‡Œä¼šä¸€ç›´è®¡ç®—
     Eigen::MatrixXd power_allocation_mat(4, 4);
     power_allocation_mat << CT, CT, CT, CT, CT * d / sqrt(2), -CT * d / sqrt(2), -CT * d / sqrt(2), CT * d / sqrt(2),
         -CT * d / sqrt(2), -CT * d / sqrt(2), CT * d / sqrt(2), CT * d / sqrt(2), -CM, CM, -CM, CM;
     Eigen::MatrixXd inv_coe_m = power_allocation_mat.inverse();
     Eigen::Vector4d control_input(U1, U2, U3, U4);
-    Eigen::Vector4d square_omega = (inv_coe_m * control_input).cwiseMax(0); // ·ÀÖ¹¸ºÖµ
+    Eigen::Vector4d square_omega = (inv_coe_m * control_input).cwiseMax(0); // é˜²æ­¢è´Ÿå€¼
     Eigen::Vector4d f = CT * square_omega;
     f = params.F_MAX * ((f.array() / params.F_MAX).tanh());
-    // 3.ËÄ½×Áú¸ñ¿âËş·¨¼ÆËãĞÂµÄÎ»ÖÃ¡¢ËÙ¶È¡¢×ËÌ¬
-    //µ±Ç°×´Ì¬
+    // 3.å››é˜¶é¾™æ ¼åº“å¡”æ³•è®¡ç®—æ–°çš„ä½ç½®ã€é€Ÿåº¦ã€å§¿æ€
+    // å½“å‰çŠ¶æ€
     params.force = f;
     Eigen::VectorXd state(12);
-    state << baseCoordinate.position.x, baseCoordinate.position.y, -1 * baseCoordinate.position.z,
-        hull.velocity.x, hull.velocity.y, hull.velocity.z,
-        temp_rotation.x, temp_rotation.y, temp_rotation.z, 
-        temp_palstance.x, temp_palstance.y, temp_palstance.z;
+    state << baseCoordinate.position.x, baseCoordinate.position.y, -1 * baseCoordinate.position.z, hull.velocity.x,
+        hull.velocity.y, -1 * hull.velocity.z, temp_rotation.x, temp_rotation.y, temp_rotation.z, temp_palstance.x,
+        temp_palstance.y, temp_palstance.z;
     Eigen::VectorXd k1 = dt * ode(state, params);
     Eigen::VectorXd k2 = dt * ode(state + k1 / 2.0, params);
     Eigen::VectorXd k3 = dt * ode(state + k2 / 2.0, params);
     Eigen::VectorXd k4 = dt * ode(state + k3, params);
 
     Eigen::VectorXd new_state = state + (k1 + 2 * k2 + 2 * k3 + k4) / 6.0;
-    // 4.¸üĞÂ×´Ì¬
+    // 4.æ›´æ–°çŠ¶æ€
     const Vector3 new_position = {new_state(0), new_state(1), -1 * new_state(2)};
-    const Vector3 new_velocity = {new_state(3), new_state(4), new_state(5)};
+    const Vector3 new_velocity = {new_state(3), new_state(4), -1 * new_state(5)};
     const Quaternion new_altitude = {new_state(6), new_state(7), new_state(8)};
     const Vector3 new_omega_body = {new_state(9), new_state(10), new_state(11)};
     const Vector3 new_palstance = baseCoordinate.directionBodyToWorld(new_omega_body);
 
-
-
-    //// ²ÎÊı¼ÆËã
-    //double speed = baseCoordinate.directionWorldToBody(hull.velocity).x;//Ç°ÓÒÏÂ×ø±êÏµ
-    //double yaw_now = Quaternion::fromCompressedQuaternion(baseCoordinate.attitude).getEuler().z;
-    //// Ä¿±êÆ«º½½ÇÓëµ±Ç°Æ«º½½ÇµÄ²î£¬Ä¿±êÆ«ÓÒÎªÕı
-    //double exp_yaw_diff = angleDiff(expectYaw, yaw_now); // atan2(local_exp_direction.y, local_exp_direction.x);
-    //Vector3 front_direction = baseCoordinate.directionBodyToWorld(Vector3(1., 0., 0.));
-    
     baseCoordinate.position = new_position;
     baseCoordinate.attitude = new_altitude.toCompressedQuaternion();
-    //// ¸üĞÂËÙ¶ÈºÍ½ÇËÙ¶È
+    //// æ›´æ–°é€Ÿåº¦å’Œè§’é€Ÿåº¦
     hull.velocity = new_velocity;
     hull.palstance = new_palstance;
+    params.MAX_FLY_TIME -= dt;
+    return;
+}
 
+void QuadrotorMoveSystem::tickspecific(double dt, Coordinate& baseCoordinate, Hull& hull, double expectYaw,
+                                       double expectSpeed, double expectHeight, QuadrotorMotionParamList& params) {
+    double m = params.M;
+    double g = 9.8;
+    double psi_ref = expectYaw;
+    double e_z = expectHeight + baseCoordinate.position.z;
+    uavmodel::Vector3 temp_rotation = Quaternion::fromCompressedQuaternion(baseCoordinate.attitude).getEuler();
+    const double MAX_LINEAR_ACC = 5.0;                                    // æœ€å¤§çº¿åŠ é€Ÿåº¦(m/sÂ²)
+    uavmodel::Vector3 v_ref_direction(cos(expectYaw), sin(expectYaw), 0); // æœŸæœ›æ–¹å‘
+    // v_ref_direction.normalize();
+    uavmodel::Vector3 v_ref = v_ref_direction * std::min(expectSpeed, params.MAX_LEVELFLY_SPEED);
+    // 1. è®¡ç®—æœŸæœ›åŠ é€Ÿåº¦ï¼ˆé€Ÿåº¦æ§åˆ¶ï¼‰
+    double v_z = std::max(-1 * params.MAX_DIVE_SPEED, std::min(params.MAX_CLIMB_SPEED, e_z / dt)); // å‘ä¸Šä¸ºæ­£
+    v_ref.z = -1 * v_z;
+    uavmodel::Vector3 target_acc{0, 0, 0};
+    uavmodel::Vector3 vel_error = v_ref - hull.velocity;
+    double acc_magnitude = std::min(vel_error.norm() / dt, MAX_LINEAR_ACC);
+    if (vel_error.norm() != 0)
+        target_acc = vel_error.normalize() * acc_magnitude;
+    target_acc.z = -1 * target_acc.z;
+    // 2. è®¡ç®—æœŸæœ›è§’é€Ÿåº¦ï¼ˆæ–¹å‘æ§åˆ¶ï¼‰
+    double U1 = m * std::sqrt(target_acc.x * target_acc.x + target_acc.y * target_acc.y +
+                              (target_acc.z + g) * (target_acc.z + g));
+    double phi_ref = std::asin(m * (target_acc.x * std::sin(psi_ref) - target_acc.y * std::cos(psi_ref)) / U1);
+    double theta_ref =
+        std::asin(m * (target_acc.x * std::cos(psi_ref) + target_acc.y * std::sin(psi_ref)) / (U1 * std::cos(phi_ref)));
+    // 3. è§’é€Ÿåº¦é™åˆ¶
+    uavmodel::Vector3 angular_vel = {
+        clamp((phi_ref - temp_rotation.x) / dt, -params.ROTATE_SPEED, params.ROTATE_SPEED),
+        clamp((theta_ref - temp_rotation.y) / dt, -params.ROTATE_SPEED, params.ROTATE_SPEED),
+        clamp((psi_ref - temp_rotation.z) / dt, -params.ROTATE_SPEED, params.ROTATE_SPEED)};
+    // 3. ç›´æ¥æ›´æ–°çŠ¶æ€ï¼ˆç®€åŒ–åŠ¨åŠ›å­¦ï¼‰
+    hull.velocity += {target_acc.x * dt, target_acc.y * dt, -1 * target_acc.z * dt};
+    hull.palstance = angular_vel;
+    baseCoordinate.position += hull.velocity * dt;
+    const Quaternion new_altitude = {temp_rotation.x + hull.palstance.x * dt, temp_rotation.y + hull.palstance.y * dt,
+                                     temp_rotation.z + hull.palstance.z * dt};
+    baseCoordinate.attitude = new_altitude.toCompressedQuaternion();
+    //// æ›´æ–°é€Ÿåº¦å’Œè§’é€Ÿåº¦
+    params.MAX_FLY_TIME -= dt;
     return;
 }
 

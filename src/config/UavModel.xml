@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ModelInfo id="" name="UAVModelv0" displayName="UAVModelv0" dllName="UAVModelv0" hasGeoInfo="false" category="ATOMIC_ENTITY" multiples="">
+	<Parameters>
+		<Parameter name="InstanceName" type="string" displayName="名称" usage="init,output" value="" unit=""/>
+		<Parameter name="ForceSideID" type="uint16" displayName="所属阵营" usage="init,output" value="" unit=""/>
+		<Parameter name="ModelID" type="string" displayName="模型类型ID" usage="init,output" value="" unit=""/>
+		<Parameter name="KeyMessages" type="string[]" displayName="关键信息" usage="output" value="" unit=""/>
+		<Parameter name="ID" type="uint64" displayName="ID" usage="init,output" value="" unit=""/>
+		<Parameter name="State" type="uint16" displayName="模型状态" usage="output" value="" unit=""/>
+
+		<Parameter name="FireID" type="uint64" displayName="开火者ID" usage="input" value="" unit=""/>
+		<Parameter name="FireData" type="FireEvent" displayName="开火事件" usage="input" value="" unit=""/>
+		<Parameter name="FireDataOut" type="FireEvent" displayName="本车开火事件" usage="output" value="" unit=""/>
+
+		<Parameter name="Command" type="uint64" displayName="动作号" usage="input" value="0" unit=""/>
+		<Parameter name="Param1" type="float64" displayName="动作参数1" usage="input" value="0" unit=""/>
+		<Parameter name="Param2" type="float64" displayName="动作参数2" usage="input" value="0" unit=""/>
+
+		<Parameter name="EntityInfoOut" type="EntityInfo" displayName="本机信息" usage="output" value="" unit=""/>
+		<Parameter name="EntityInfo" type="EntityInfo" displayName="其他实体信息" usage="input" value="" unit=""/>
+
+		<Parameter name="systemscannedInfoOut" type="EntityInfo[]" displayName="本机组网扫描到的所有信息" usage="output" value="" unit=""/>
+		<Parameter name="scannedInfoOut" type="EntityInfo[]" displayName="本机扫描到的所有信息" usage="output" value="" unit=""/>
+		<Parameter name="scannedInfo" type="EntityInfo[]" displayName="其他实体扫描到的信息" usage="input" value="" unit=""/>
+		<Parameter name="scannedInfosizeout" type="uint64" displayName="探测列表大小" usage="output" value="" unit=""/>
+		<Parameter name="scannedInfosize" type="uint64" displayName="探测列表大小收" usage="input" value="" unit=""/>
+
+		<Parameter name="VID" type="uint64" displayName="本机VID,从0开始编号" usage="init,output" value="" unit=""/>
+		<Parameter name="platoonid" type="uint64" displayName="本车所在排号" usage="init" value="" unit=""/>
+		<Parameter name="baselongitude" type="float64" displayName="基坐标经度" usage="init" value="0" unit=""/>
+		<Parameter name="baselatitude" type="float64" displayName="基坐标纬度" usage="init" value="0" unit=""/>
+		<Parameter name="basealtitude" type="float64" displayName="基坐标高度" usage="init" value="0" unit=""/>
+		<Parameter name="longitude" type="float64" displayName="经度" usage="init,output" value="0" unit=""/>
+		<Parameter name="latitude" type="float64" displayName="纬度" usage="init,output" value="0" unit=""/>
+		<Parameter name="altitude" type="float64" displayName="高度" usage="init,output" value="0" unit=""/>
+		<Parameter name="demFilePath" type="string" displayName="DEM文件路径" usage="init" value="" unit=""/>
+		<Parameter name="filePath" type="string" value="" displayName="物理模型参数配置文件路径" unit="" usage="init"/>
+		<Parameter name="roll" type="float64" displayName="滚转" usage="output" value="0" unit=""/>
+		<Parameter name="pitch" type="float64" displayName="俯仰" usage="output" value="0" unit=""/>
+		<Parameter name="yaw" type="float64" displayName="偏航" usage="output" value="0" unit=""/>
+		<Parameter name="energy_remain" type="float64" displayName="当前油量" usage="output" value="0" unit=""/>
+		<Parameter name="maxdetectrange" type="float64" displayName="最大探测范围" usage="output" value="0" unit=""/>
+	</Parameters>
+</ModelInfo>

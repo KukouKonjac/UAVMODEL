@@ -1,19 +1,19 @@
-﻿#include <format>
+﻿#include <chrono>
+#include <format>
 #include <string>
-#include <chrono>
 
 #include "UAVModel.h"
-#include "src/model/uavbuilder.h"
+#include "src/model/environment/wsf.hpp"
 #include "src/model/tools/constant.hpp"
 #include "src/model/tools/rand.hpp"
-#include "src/model/environment/wsf.hpp"
+#include "src/model/uavbuilder.h"
 
 namespace {
 
 using namespace std;
 using namespace uavmodel::command;
 
-constexpr inline double rate = 111000.;//坐标转换
+constexpr inline double rate = 111000.; // 坐标转换
 
 uavmodel::Vector3 locationTrans(const UAVModel::Location& base, const UAVModel::Location& location) {
     return {
@@ -63,16 +63,22 @@ bool UAVModel::Init(const std::unordered_map<std::string, std::any>& value) {
         uavmodel::UavBuilder::buildFromFile(getLibDir() + "uav.xml", model);
     }
     Location tmp{0, 0, 0};
-    tmp.longitude = std::any_cast<double>(value.find("longitude")->second);
-    tmp.latitude = std::any_cast<double>(value.find("latitude")->second);
-    tmp.altitude = std::any_cast<double>(value.find("altitude")->second);
+    tmp.longitude = std::any_cast<double>(value.find("baselongitude")->second);
+    tmp.latitude = std::any_cast<double>(value.find("baselatitude")->second);
+    tmp.altitude = std::any_cast<double>(value.find("basealtitude")->second);
+    myVID = std::any_cast<uint64_t>(value.find("VID")->second);
+    Location tmpself{0, 0, 0};
+    tmpself.longitude = std::any_cast<double>(value.find("longitude")->second);
+    tmpself.latitude = std::any_cast<double>(value.find("latitude")->second);
+    tmpself.altitude = std::any_cast<double>(value.find("altitude")->second);
+    myplatoonid = std::any_cast<uint64_t>(value.find("platoonid")->second);
+    location = tmp;
     {
         std::lock_guard<std::mutex> lock(initLock);
-        myVID = VIDCounter++;
-        if (!myVID) {
+        myUAVID = VIDCounter++;
+        if (!myUAVID) {
             // location of car 0 is base location.
             // CQ will not release dll when restart, but has no unexpected affect
-            location = tmp;
             if (auto it = value.find("demFilePath"); it != value.end()) {
                 auto env = std::make_unique<wsfplugin::WSFEnvironment>();
                 auto filePath = any_cast<std::string>(it->second);
@@ -82,9 +88,9 @@ bool UAVModel::Init(const std::unordered_map<std::string, std::any>& value) {
         }
     }
     auto& buffer = model.components.getSpecificSingleton<uavmodel::EventBuffer>().value();
-    buffer.emplace("longitude", tmp.longitude);
-    buffer.emplace("latitude", tmp.latitude);
-    model.components.getSpecificSingleton<uavmodel::Coordinate>().value().position = locationTrans(location, tmp);
+    buffer.emplace("longitude", tmpself.longitude);
+    buffer.emplace("latitude", tmpself.latitude);
+    model.components.getSpecificSingleton<uavmodel::Coordinate>().value().position = locationTrans(location, tmpself);
     state_ = CSInstanceState::IS_RUNNING;
     return true;
 }
@@ -92,30 +98,31 @@ bool UAVModel::Init(const std::unordered_map<std::string, std::any>& value) {
 bool UAVModel::Tick(double time) {
     // time: ms -> s
     model.tick(time / 1000);
-
     auto& buffer = model.components.getSpecificSingleton<uavmodel::EventBuffer>();
     buffer->emplace("VID", getVID());
-    uavmodel::Vector3 tmp = model.components.getSpecificSingleton<uavmodel::Coordinate>().value().position;
-    EntityInfo info;
+    EntityInfo info{};
     info.baseInfo = BaseInfo{
         getVID(),
         GetForceSideID(),
         static_cast<uint16_t>(uavmodel::BaseInfo::ENTITY_TYPE::UAV),
         static_cast<uint16_t>(model.components.getSpecificSingleton<uavmodel::DamageModel>()->damageLevel),
-        get<1>(*model.components.getNormal<uavmodel::ProtectionModel>().begin()).jammer,//约定第一个entity反映整体特征
-        get<1>(*model.components.getNormal<uavmodel::ProtectionModel>().begin()).hidden,//约定第一个entity反映整体特征
-        get<1>(*model.components.getNormal<uavmodel::ProtectionModel>().begin()).active_interference_rate,//约定第一个entity反映整体特征
-        get<1>(*model.components.getNormal<uavmodel::ProtectionModel>().begin()).active_interference_distance,//约定第一个entity反映整体特征
+        get<1>(*model.components.getNormal<uavmodel::ProtectionModel>().begin()).jammer, // 约定第一个entity反映整体特征
+        get<1>(*model.components.getNormal<uavmodel::ProtectionModel>().begin()).hidden, // 约定第一个entity反映整体特征
+        get<1>(*model.components.getNormal<uavmodel::ProtectionModel>().begin())
+            .active_interference_rate, // 约定第一个entity反映整体特征
+        get<1>(*model.components.getNormal<uavmodel::ProtectionModel>().begin())
+            .active_interference_distance, // 约定第一个entity反映整体特征
+        getPlatoonID(),
     };
     if (info.baseInfo.damageLevel >= static_cast<uint16_t>(uavmodel::DAMAGE_LEVEL::K)) {
         state_ = CSInstanceState::IS_DESTROYED;
     }
     info.position = model.components.getSpecificSingleton<uavmodel::Coordinate>()->position;
     info.velocity = model.components.getSpecificSingleton<uavmodel::Hull>()->velocity;
-    
+
     buffer->emplace("EntityInfoOut", info.ToValueMap());
     Location tmpl = positionTrans(location, info.position);
-    double oilremain = model.components.getSpecificSingleton<uavmodel::WheelMotionParamList>()->OIL_REMAIN;
+    double energyremain = model.components.getSpecificSingleton<uavmodel::QuadrotorMotionParamList>()->MAX_FLY_TIME;
     // deg
     buffer->emplace("longitude", tmpl.longitude);
     buffer->emplace("altitude", tmpl.altitude);
@@ -128,19 +135,26 @@ bool UAVModel::Tick(double time) {
     buffer->emplace("pitch", uavmodel::RAD2DEG(attitude.y));
     buffer->emplace("yaw", uavmodel::RAD2DEG(attitude.z));
     auto velocity = model.components.getSpecificSingleton<uavmodel::Hull>().value().velocity;
-    buffer->emplace("velocity_x", velocity.x);
-    buffer->emplace("velocity_y", velocity.y);
-    buffer->emplace("oil_remain", oilremain);
+    buffer->emplace("energy_remain", energyremain);
 
     std::vector<std::any> scannedInfoOut;
+    std::vector<std::any> sysscannedInfoOut;
     for (auto& info : model.components.getSpecificSingleton<uavmodel::ScannedMemory>().value()) {
-        //判断info中的tuple中的double参数是否==0
-        if (std::get<0>(info.second) == 0.)
-        {
+        // 判断info中的tuple中的double参数是否==0
+        if (std::get<0>(info.second) == 0.) {
             scannedInfoOut.emplace_back(EntityInfo(std::get<1>(info.second)).ToValueMap());
         }
     }
+    for (auto& info : model.components.getSpecificSingleton<uavmodel::SystemScannedMemory>().value()) {
+        sysscannedInfoOut.emplace_back(EntityInfo(std::get<1>(info.second)).ToValueMap());
+    }
+    buffer->emplace("scannedInfosizeout", scannedInfoOut.size());
     buffer->emplace("scannedInfoOut", std::move(scannedInfoOut));
+    buffer->emplace("systemscannedInfoOut", std::move(sysscannedInfoOut));
+    model.components.getSpecificSingleton<uavmodel::CommunicaionMemory>().value().clear(); // 清空缓存
+    model.components.getSpecificSingleton<uavmodel::ScannedMemory>().value().clear();
+    model.components.getSpecificSingleton<uavmodel::SystemScannedMemoryget>().value().clear();
+    model.components.getSpecificSingleton<uavmodel::SystemScannedMemory>().value().clear();
     return true;
 }
 
@@ -150,17 +164,37 @@ bool UAVModel::SetInput(const std::unordered_map<std::string, std::any>& value) 
         EntityInfo tmp;
         tmp.FromValueMap(any_cast<CSValueMap>(v));
         uavmodel::VID ID = tmp.baseInfo.id;
-        get<1>((*(model.components.getSpecificSingleton<uavmodel::ScannedMemory>()))[ID]) = tmp;
-    }
-    if (auto it = value.find("FireData"); it != value.end()) {
-        uavmodel::VID ID = any_cast<uavmodel::VID>(value.find("FireID")->second);
-        auto& v = it->second;
-        if (ID != getVID()) {
-            FireEvent tmp;
-            tmp.FromValueMap(any_cast<CSValueMap>(v));
-            model.components.getSpecificSingleton<uavmodel::FireEventQueue>()->push_back(tmp);
+        get<1>((*(model.components.getSpecificSingleton<uavmodel::ScannedMemory>()))[ID]) = tmp; // 报错代码
+        size_t size = 0;
+        if (auto it = value.find("scannedInfosize"); it != value.end()) {
+            size = any_cast<size_t>(it->second);
+        }
+        if (auto it = value.find("scannedInfo"); it != value.end() && tmp.baseInfo.side == GetForceSideID()) {
+            auto& v1 = it->second;
+            auto tmp_vec = std::any_cast<std::vector<std::any>>(v1);
+            int i = 0;
+            // string x = "";
+            for (auto& info : tmp_vec) {
+                if (i >= size)
+                    break;
+                EntityInfo tmpEntity;
+                tmpEntity.FromValueMap(any_cast<CSValueMap>(info));
+                uavmodel::VID NewID = tmpEntity.baseInfo.id;
+                get<1>((*(model.components.getSpecificSingleton<uavmodel::SystemScannedMemoryget>()))[ID][NewID]) =
+                    tmpEntity;
+                i++;
+            }
         }
     }
+    // if (auto it = value.find("FireData"); it != value.end()) {
+    //     uavmodel::VID ID = any_cast<uavmodel::VID>(value.find("FireID")->second);
+    //     auto& v = it->second;
+    //     if (ID != getVID()) {
+    //         FireEvent tmp;
+    //         tmp.FromValueMap(any_cast<CSValueMap>(v));
+    //         model.components.getSpecificSingleton<uavmodel::FireEventQueue>()->push_back(tmp);
+    //     }
+    // }
     if (auto it = value.find("Command"); it != value.end()) {
         auto& v = it->second;
         auto command = static_cast<COMMAND_TYPE>(std::any_cast<uint64_t>(v));
@@ -181,6 +215,7 @@ bool UAVModel::SetInput(const std::unordered_map<std::string, std::any>& value) 
 std::unordered_map<std::string, std::any>* UAVModel::GetOutput() {
     std::get<0>(model.components.getSingleton<uavmodel::VID>()) = getVID();
     std::get<0>(model.components.getSingleton<uavmodel::SID>()) = GetForceSideID();
+    std::get<0>(model.components.getSingleton<uavmodel::PLATOONID>()) = getPlatoonID();
     auto& buffer = model.components.getSpecificSingleton<uavmodel::EventBuffer>().value();
     buffer.emplace("ForceSideID", GetForceSideID());
     buffer.emplace("ModelID", GetModelID());

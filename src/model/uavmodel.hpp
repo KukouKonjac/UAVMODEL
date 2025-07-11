@@ -1,36 +1,35 @@
 ﻿#pragma once
 
-#include <vector>
-#include <unordered_map>
-#include <memory>
-#include <any>
-#include "tools/datastructure.hpp"
 #include "framework/system.hpp"
+#include "tools/datastructure.hpp"
 #include "toolsystem/iosystem.hpp"
+#include <any>
+#include <memory>
+#include <unordered_map>
+#include <vector>
 
-namespace uavmodel{
+namespace uavmodel {
 
-class UavModel{
-public:
+class UavModel {
+  public:
     friend class UavBuilder;
     UavModel() = default;
     using CSValueMap = std::unordered_map<std::string, std::any>;
-    void tick(double dt){
+    void tick(double dt) {
         components.getSpecificSingleton<EventBuffer>()->clear();
-        for(auto&& sys : systems){
+        for (auto&& sys : systems) {
             sys->tick(dt, components);
         }
     }
-    CSValueMap* getOutput(){
-        return &(components.getSpecificSingleton<EventBuffer>().value());
-    }
+    CSValueMap* getOutput() { return &(components.getSpecificSingleton<EventBuffer>().value()); }
     Components components;
-private:
+
+  private:
     UavModel(const UavModel&) = default;
     inline static std::vector<std::unique_ptr<System>> systems{};
 };
 
-}
+} // namespace uavmodel
 
 // class UavModel{
 // public:

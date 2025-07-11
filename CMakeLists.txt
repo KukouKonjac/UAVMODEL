@@ -5,7 +5,7 @@ set(PROJ_NAME UAVModel)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_TOOLCHAIN_FILE "D:/vcpkg/scripts/buildsystems/vcpkg.cmake")
+#set(CMAKE_TOOLCHAIN_FILE "D:/vcpkg/scripts/buildsystems/vcpkg.cmake")
 
 # if(CMAKE_BUILD_TYPE EQUAL Debug)
 # add_definitions(-D__DEBUG__)

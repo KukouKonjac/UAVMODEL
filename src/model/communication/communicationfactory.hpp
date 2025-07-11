@@ -1,6 +1,6 @@
 #pragma once
 
-#include "communication.hpp"
+#include "communication_d.hpp"
 #include "../framework/pattern.hpp"
 #include "antenna/myantenna.h"
 

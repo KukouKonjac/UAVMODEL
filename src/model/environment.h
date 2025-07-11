@@ -7,7 +7,11 @@
 
 
 namespace uavmodel {
-
+struct ObstacleInfo {
+    Vector3 maxObstaclePoint;   // 最高障碍点坐标
+    double maxHeight = 999;     // 最大障碍高度
+    double obstacleWidth = 0.0; // 障碍物有效宽度
+};
 class Environment {
   public:
     friend class EnvironmentInfoAgent;
@@ -48,17 +52,13 @@ class Environment {
                 {879.009000, -16.955209, 0.000000},  {877.233000, -31.238688, 0.000000},
                 {861.360000, -135.230637, 0.000000}, {856.809000, -164.825184, 0.000000},
             };
-        else if (end.x == 2)
-            return std::vector<Vector3>{};
         else
             return std::vector<Vector3>{};
-        // get routes from server
-        // GetRoutePoints_return params = GetRoutePoints(113.5439372, 22.2180642, 113.5425177, 22.2252363);
-        // printf("total points count: %d\n", params.r0);
-        // for (int i = 0; i < params.r0; i++) {
-        //     printf("lon-lat: (%lf, %lf)\n", params.r1[i], params.r2[i]);
-        // }
-        // FreePositionsPointer(params.r1, params.r2);
+    }
+
+    virtual ObstacleInfo analyzeObstaclesBetween(const Vector3& start, const Vector3& end) const {
+        uavmodel::ObstacleInfo result;
+        return result;
     }
 };
 
@@ -93,7 +93,9 @@ class EnvironmentInfoAgent {
     //! @param end 终止点
     //! @return 中间路径点序列
     std::vector<Vector3> getRoute(const Vector3& start, const Vector3& end) { return env->getRoute(start, end); }
-
+    ObstacleInfo analyzeObstaclesBetween(const Vector3& start, const Vector3& end) const {
+        return env->analyzeObstaclesBetween(start, end);
+    }
   private:
     inline static std::unique_ptr<Environment> env = std::make_unique<Environment>();
 };

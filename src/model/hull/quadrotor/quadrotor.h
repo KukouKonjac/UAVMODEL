@@ -1,45 +1,41 @@
-#pragma once
+ï»¿#pragma once
 
 #include "../../environment.h"
 #include "../../tools/datastructure.hpp"
-#include <cmath>
 #include "PID.h"
 #include <Eigen/Dense>
+#include <cmath>
 
-namespace uavmodel{
+namespace uavmodel {
 
-// ÂÖÊ½³µÁ¾ÔË¶¯ÏµÍ³
-class QuadrotorMoveSystem{
-private:
+// è½®å¼è½¦è¾†è¿åŠ¨ç³»ç»Ÿ
+class QuadrotorMoveSystem {
+  private:
     inline static EnvironmentInfoAgent env{};
     // void updateState(double dt, Coordinate& baseCoordinate, Hull& hull, WheelMotionParamList& params);
-    // ¾²Ì¬ PID ¿ØÖÆÆ÷
-    static PID pid_vx;    // ¿ØÖÆËÙ¶È X
-    static PID pid_vy;    // ¿ØÖÆËÙ¶È Y
-    static PID pid_z;    // ¿ØÖÆËÙ¶È Z
-    static PID pid_phi;   // ¿ØÖÆ×ËÌ¬ roll
-    static PID pid_theta; // ¿ØÖÆ×ËÌ¬ pitch
-    static PID pid_psi;   // ¿ØÖÆÆ«º½½Ç yaw
+    // é™æ€ PID æ§åˆ¶å™¨
+    static PID pid_vx;    // æ§åˆ¶é€Ÿåº¦ X
+    static PID pid_vy;    // æ§åˆ¶é€Ÿåº¦ Y
+    static PID pid_z;     // æ§åˆ¶é€Ÿåº¦ Z
+    static PID pid_phi;   // æ§åˆ¶å§¿æ€ roll
+    static PID pid_theta; // æ§åˆ¶å§¿æ€ pitch
+    static PID pid_psi;   // æ§åˆ¶åèˆªè§’ yaw
   public:
     QuadrotorMoveSystem() = default;
 
     static Eigen::VectorXd ode(const Eigen::VectorXd& state, QuadrotorMotionParamList& params);
 
-    //! @param dt: ÉÏÒ»´Îµ÷ÓÃºóµÄÊ±¼ä
-    //! @param baseCoordinate: ËæÌå×ø±êÏµ
-    //! @param hull: ÔË¶¯²ÎÊı£ºËÙ¶È¡¢½ÇËÙ¶È¡¢ÖÊÁ¿¡¢×ª¶¯¹ßÁ¿
-    //! @param expectYaw: ÆÚÍû·½Ïò
-    //! @param expectSpeed: ÆÚÍûËÙ¶È
-    //! @param params: ÔË¶¯²ÎÊı
-    static void tick(
-        double dt, 
-        Coordinate& baseCoordinate, 
-        Hull& hull, 
-        double expectYaw, 
-        double expectSpeed, 
-        double expectHeight,
-        QuadrotorMotionParamList& params
-    );
+    //! @param dt: ä¸Šä¸€æ¬¡è°ƒç”¨åçš„æ—¶é—´
+    //! @param baseCoordinate: éšä½“åæ ‡ç³»
+    //! @param hull: è¿åŠ¨å‚æ•°ï¼šé€Ÿåº¦ã€è§’é€Ÿåº¦ã€è´¨é‡ã€è½¬åŠ¨æƒ¯é‡
+    //! @param expectYaw: æœŸæœ›æ–¹å‘
+    //! @param expectSpeed: æœŸæœ›é€Ÿåº¦
+    //! @param params: è¿åŠ¨å‚æ•°
+    static void tick(double dt, Coordinate& baseCoordinate, Hull& hull, double expectYaw, double expectSpeed,
+                     double expectHeight, QuadrotorMotionParamList& params);
+
+    static void tickspecific(double dt, Coordinate& baseCoordinate, Hull& hull, double expectYaw, double expectSpeed,
+                             double expectHeight, QuadrotorMotionParamList& params);
 };
 
 } // namespace uavmodel

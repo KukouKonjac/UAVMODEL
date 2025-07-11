@@ -1,16 +1,16 @@
-#pragma once
+﻿#pragma once
 
-#include <string>
-#include <vector>
+#include <cmath>
 #include <queue>
 #include <set>
-#include <cmath>
+#include <string>
+#include <vector>
 
-#include <gdal.h>
-#include <gdal_priv.h>
 #include "../environment.h"
 #include "../routeplan/Astar.h"
 #include <chrono>
+#include <gdal.h>
+#include <gdal_priv.h>
 
 struct TimeCounter {
     size_t& tar;
@@ -27,7 +27,7 @@ namespace wsfplugin {
 
 struct WSFEnvironment : public uavmodel::Environment {
     // Dem data;
-    
+
     double longitudeO;
     double latitudeO;
     GDALDataset* dataset;
@@ -94,7 +94,7 @@ struct WSFEnvironment : public uavmodel::Environment {
         auto [latitude, longitude] = positionToLonlat(pos);
 
         auto curr_pos = std::make_pair(longitude, latitude);
-        //std::cout << "curr_pos:" << curr_pos.first << " " << curr_pos.second << std::endl;
+        // std::cout << "curr_pos:" << curr_pos.first << " " << curr_pos.second << std::endl;
         auto pixelCoord = GeoToPixel(curr_pos);
         int x1 = (int)pixelCoord.first;
         int y1 = (int)pixelCoord.second;
@@ -123,9 +123,9 @@ struct WSFEnvironment : public uavmodel::Environment {
         elevation2 = (*pData)[y1 * dataWidth + x2];
         elevation3 = (*pData)[y2 * dataWidth + x1];
         elevation4 = (*pData)[y2 * dataWidth + x2];
-        //std::cout << "elevation:" << elevation1 << " " << elevation2 << " " << elevation3 << " " << elevation4
-                  //<< std::endl;
-        //std::cout << "w:" << w1 << " " << w2 << " " << w3 << " " << w4 << std::endl;
+        // std::cout << "elevation:" << elevation1 << " " << elevation2 << " " << elevation3 << " " << elevation4
+        //<< std::endl;
+        // std::cout << "w:" << w1 << " " << w2 << " " << w3 << " " << w4 << std::endl;
         return static_cast<double>(elevation1 * w1 + elevation2 * w2 + elevation3 * w3 + elevation4 * w4);
     }
 
@@ -154,8 +154,9 @@ struct WSFEnvironment : public uavmodel::Environment {
         return true;
     }
 
-    virtual std::vector<uavmodel::Vector3> getRoute(const uavmodel::Vector3& start, const uavmodel::Vector3& end) const override {
-        //for test
+    virtual std::vector<uavmodel::Vector3> getRoute(const uavmodel::Vector3& start,
+                                                    const uavmodel::Vector3& end) const override {
+        // for test
         if (abs(end.x - 1) < 0.001) {
             return std::vector<uavmodel::Vector3>{
                 {0.000000, 0.000000, 0.000000},      {-5.772000, -19.215904, 0.000000},
@@ -193,8 +194,7 @@ struct WSFEnvironment : public uavmodel::Environment {
                 {184.482000, -509.763779, 0.000000}, {181.485000, -531.958695, 0.000000},
                 {179.709000, -546.241534, 0.000000}, {163.836000, -650.228824, 0.000000},
                 {159.285000, -679.822045, 0.000000}};
-        } else if (abs(end.x - 3) < 0.001)
-        {
+        } else if (abs(end.x - 3) < 0.001) {
             return std::vector<uavmodel::Vector3>{
                 {0.000000, 0.000000, 0.000000},      {-5.772000, -19.215904, 0.000000},
                 {-14.097000, -42.131126, 0.000000},  {-16.539000, -51.790457, 0.000000},
@@ -220,8 +220,7 @@ struct WSFEnvironment : public uavmodel::Environment {
                 {754.023000, 483.480356, 0.000000},  {754.689000, 489.337610, 0.000000},
                 {754.911000, 491.392787, 0.000000},  {759.018000, 507.628684, 0.000000},
                 {697.524000, 515.027321, 0.000000},  {697.524000, 515.027321, 0.000000}};
-        } else if (abs(end.x - 4) < 0.001)
-        {
+        } else if (abs(end.x - 4) < 0.001) {
             return std::vector<uavmodel::Vector3>{
                 {0.000000, 0.000000, 0.000000},        {-5.772000, -19.215904, 0.000000},
                 {-14.097000, -42.131126, 0.000000},    {-16.539000, -51.790457, 0.000000},
@@ -256,7 +255,7 @@ struct WSFEnvironment : public uavmodel::Environment {
         auto mymin = [](auto x, auto y) { return x < y ? x : y; };
         auto mymax = [](auto x, auto y) { return x > y ? x : y; };
         // build grid
-        //std::vector<char> grid_data;
+        // std::vector<char> grid_data;
         std::vector<double> ox;
         std::vector<double> oy;
         // calculate corner coordination of grid
@@ -279,10 +278,10 @@ struct WSFEnvironment : public uavmodel::Environment {
         constexpr size_t MAX_WIDTH_AND_HEITGHT = 200;
         double step = mymax(10, mymax(x, y) / MAX_WIDTH_AND_HEITGHT);
         // calculate grid size
-        size_t width = size_t(x / step);//�ϱ�0707wsb�������Ƕ���
+        size_t width = size_t(x / step); // 南北0707wsb，下面是东西
         size_t height = size_t(y / step);
         // create grid
-        //grid_data.resize(width * height, 0);
+        // grid_data.resize(width * height, 0);
         constexpr double threshold = 0.37;
         // fill grid with moveable cells using slope
         for (double i = 0; i < width; i++) {
@@ -294,11 +293,11 @@ struct WSFEnvironment : public uavmodel::Environment {
                 if (slope > threshold) {
                     ox.push_back(x1 + i * step);
                     oy.push_back(y1 + j * step);
-                    //grid_data[i* width + j] = 1;
+                    // grid_data[i* width + j] = 1;
                 }
             }
         }
-        //�����������ϰ���
+        // 给四周添加障碍物
         for (double i = x1; i < x2; i = i + step) {
             ox.push_back(i);
             oy.push_back(y1);
@@ -316,8 +315,8 @@ struct WSFEnvironment : public uavmodel::Environment {
             oy.push_back(i);
         }
 
-        //wriet data to file
-        std::ofstream outputFile("path_output_obstacle.txt", std::ios::out);
+        // wriet data to file
+        /*std::ofstream outputFile("path_output_obstacle.txt", std::ios::out);
         if (outputFile.is_open()) {
             for (size_t i = 0; i < ox.size(); i++) {
                 outputFile << ox[i] << "," << oy[i] << std::endl;
@@ -326,36 +325,93 @@ struct WSFEnvironment : public uavmodel::Environment {
             std::cout << "Data written to 'path_output_obstacle.txt' successfully." << std::endl;
         } else {
             std::cerr << "Unable to open the output file." << std::endl;
-        }
+        }*/
 
         // find start and end cell
         std::vector<double> startpos{start.x, start.y}, goal{end.x, end.y};
-        double grid_size = step;//2.0;//����step
-        double robot_radius = 5.0;//���İ뾶
+        double grid_size = step;   // 2.0;//就是step
+        double robot_radius = 5.0; // 车的半径
         Astar astar(step, robot_radius);
         astar.setGo(goal);
         astar.setSt(startpos);
-        astar.setOx(ox); // �����ϰ���
+        astar.setOx(ox); // 设置障碍物
         astar.setOy(oy);
         astar.calObstacleMap(ox, oy);
         astar.getMotionModel();
         std::vector<uavmodel::Vector3> path = astar.planning(startpos, goal);
 
-        
         std::cout << "linkcheckedtimes: " << Astar::linkedchecked << std::endl;
-        std::cout << "used time: " << Astar::line_time << "(line), "  <<Astar::calfinalpath_time<< "(calfinalpath), " << Astar::total_time << "(total)" << std::endl;
-
+        std::cout << "used time: " << Astar::line_time << "(line), " << Astar::calfinalpath_time << "(calfinalpath), "
+                  << Astar::total_time << "(total)" << std::endl;
 
         // TODO: check AI-generated code
         // find path using A* algorithm
-        /* std::priority_queue<std::pair<double, std::pair<size_t, size_t>>, std::vector<std::pair<double, std::pair<size_t, size_t>>>, std::greater<std::pair<double, std::pair<size_t, size_t>>>> open_list;
+        /* std::priority_queue<std::pair<double, std::pair<size_t, size_t>>, std::vector<std::pair<double,
+        std::pair<size_t, size_t>>>, std::greater<std::pair<double, std::pair<size_t, size_t>>>> open_list;
         std::set<std::pair<size_t, size_t>> close_list;*/
-        //���path������̨
+        // 输出path到控制台
         /*for (auto p : path) {
             std::cout << "(" << p.x << "," << p.y << "," << p.z << ")" << std::endl;
         }*/
         return path;
     }
+
+    virtual uavmodel::ObstacleInfo analyzeObstaclesBetween(const uavmodel::Vector3& start,
+                                                           const uavmodel::Vector3& end) const override {
+        uavmodel::ObstacleInfo result;
+        auto mymax = [](auto x, auto y) { return x > y ? x : y; };
+        double totalDist = (end - start).norm();
+        const double stepSize = mymax(10.0, totalDist / 100.0); // 沿路径采样步长(米),最小10米
+        const double lateralStep = 5;
+        ; // 横向采样步长
+        uavmodel::Vector3 rawDir = end - start;
+        double length = rawDir.norm(); // 假设norm()返回向量模长
+        uavmodel::Vector3 direction = (length > 1e-6) ? rawDir / length : uavmodel::Vector3(0, 0, 0);
+        // 沿主路径采样
+        for (double dist = 0; dist <= totalDist; dist += stepSize) {
+            uavmodel::Vector3 samplePoint = start + direction * dist;
+            // 获取地形高度（考虑车辆高度）
+            double terrainHeight = getAltitude(samplePoint);
+            double lineHeight = start.z + (end.z - start.z) * (dist / totalDist);
+            // 检测障碍
+            if (terrainHeight > lineHeight) {
+                // 横向扩展采样找宽度
+                // Vector3 lateralDir = Vector3(-direction.y, direction.x, 0).normalized();
+                uavmodel::Vector3 lateralRaw(-direction.y, direction.x, 0);
+                double lateralLength = lateralRaw.norm();
+                uavmodel::Vector3 lateralDir =
+                    (lateralLength > 1e-6) ? lateralRaw / lateralLength : uavmodel::Vector3(0, 0, 0);
+                double leftWidth = 0.0;
+                double rightWidth = 0.0;
+                // 向左扩展
+                for (double lateralDist = 0; lateralDist < 100; lateralDist += lateralStep) {
+                    uavmodel::Vector3 lateralPoint = samplePoint + lateralDir * lateralDist;
+                    if (getAltitude(lateralPoint) > lineHeight) {
+                        leftWidth = lateralDist;
+                    } else
+                        break;
+                }
+                // 向右扩展
+                for (double lateralDist = 0; lateralDist < 100; lateralDist += lateralStep) {
+                    uavmodel::Vector3 lateralPoint = samplePoint - lateralDir * lateralDist;
+                    if (getAltitude(lateralPoint) > lineHeight) {
+                        rightWidth = lateralDist;
+                    } else
+                        break;
+                }
+                // 更新最大障碍
+                double obstacleHeight = terrainHeight - lineHeight;
+                if (obstacleHeight > result.maxHeight) {
+                    result.maxHeight = obstacleHeight;
+                    result.obstacleWidth = leftWidth + rightWidth;
+                    result.maxObstaclePoint = samplePoint;
+                }
+            }
+        }
+
+        return result;
+    }
+
     virtual ~WSFEnvironment() {
         if (dataset) {
             GDALClose(dataset);
@@ -364,4 +420,4 @@ struct WSFEnvironment : public uavmodel::Environment {
     }
 };
 
-}
+} // namespace wsfplugin

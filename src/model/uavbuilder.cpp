@@ -9,6 +9,7 @@
 #include "tools/myassert.hpp"
 #include "tools/seterror.hpp"
 
+#include "communication/communication.h"
 #include "damage/uavdamage.h"
 #include "firecontrolsystem/uavfcs.hpp"
 #include "hull/uavhull.h"
@@ -34,8 +35,8 @@ struct NameTable {
     }
 };
 
-constexpr NameTable<WheelMotionParamList, QuadrotorMotionParamList, Coordinate, DamageModel, Block, ProtectionModel, FireUnit, SensorData,
-                    CommunicationData>
+constexpr NameTable<WheelMotionParamList, QuadrotorMotionParamList, Coordinate, DamageModel, Block, ProtectionModel,
+                    FireUnit, SensorData, CommunicationData>
     nameTable{{
         "WheelMotionParamList",
         "QuadrotorMotionParamList",
@@ -51,7 +52,7 @@ constexpr NameTable<WheelMotionParamList, QuadrotorMotionParamList, Coordinate, 
 class CStyleString {
   public:
     char* s;
-    CStyleString(size_t n) : s(new char[n]){};
+    CStyleString(size_t n) : s(new char[n]) {};
     CStyleString(const CStyleString& s) = delete;
     void operator=(const CStyleString& s) = delete;
     CStyleString(const std::string& str) : s(new char[str.size() + 5]) { memcpy(s, str.c_str(), str.size() + 1); };
@@ -81,7 +82,7 @@ struct loadComponent<SingletonComponent<Ty...>> {
     static void load(rapidxml::xml_node<char>* root, uavmodel::Components::Modifier& handle) {
         int tmp[] = {[&]() {
             if (auto p = root->first_node(nameTable.getName<Ty>().data(), nameTable.getName<Ty>().size()); p != 0) {
-                handle.addSingletonComponents<Ty>(componentDeserialize<Ty>(p));//反序列化
+                handle.addSingletonComponents<Ty>(componentDeserialize<Ty>(p)); // 反序列化
             }
             return 0;
         }()...};
@@ -148,13 +149,10 @@ struct RestrictionList {
 
 void checkRestriction(Components& c) {
     using namespace uavmodel;
-    static RestrictionList<
-        Restriction<Block, Coordinate>,
-        Restriction<ProtectionModel, Block>, 
-        Restriction<DamageModel, Block>,
-        Restriction<SensorData, DamageModel>, 
-        Restriction<FireUnit, DamageModel>
-    > checker;
+    static RestrictionList<Restriction<Block, Coordinate>, Restriction<ProtectionModel, Block>,
+                           Restriction<DamageModel, Block>, Restriction<SensorData, DamageModel>,
+                           Restriction<FireUnit, DamageModel>>
+        checker;
     auto s = checker.check(c);
     if (!s.empty()) {
         error(s);
@@ -166,18 +164,20 @@ void checkRestriction(Components& c) {
 namespace uavmodel {
 
 void UavBuilder::buildFromSource(const std::string& srcXML, UavModel& model, bool check) {
-    static struct InitJob{
-        InitJob() { 
+    static struct InitJob {
+        InitJob() {
             auto& system = UavModel::systems;
             system.push_back(std::make_unique<PrepareSystem>());
 
+            system.push_back(std::make_unique<CommunicationSystem>());
+
             system.push_back(std::make_unique<SensorSystem>());
-            system.push_back(std::make_unique<FireControlSystem>());
+            // system.push_back(std::make_unique<FireControlSystem>());
 
             system.push_back(std::make_unique<BallisticSystem>());
-            system.push_back(std::make_unique<HitSystem>());
+            // system.push_back(std::make_unique<HitSystem>());
 
-            system.push_back(std::make_unique<DamageSystem>());
+            // system.push_back(std::make_unique<DamageSystem>());
 
             system.push_back(std::make_unique<HullSystem>());
 
@@ -193,21 +193,21 @@ void UavBuilder::buildFromSource(const std::string& srcXML, UavModel& model, boo
 
     if (auto handle = model.components.getModifier()) {
         handle.addSingletonComponents<CommandBuffer, EventBuffer, DamageModel, Coordinate, HitEventQueue,
-                                      FireEventQueue, ScannedMemory, Hull, PathPlanningModel, SystemScannedMemory, SystemScannedMemoryget>({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {});
+                                      FireEventQueue, ScannedMemory, Hull, PathPlanningModel, SystemScannedMemory,
+                                      SystemScannedMemoryget, CommunicaionMemory>({}, {}, {}, {}, {}, {}, {}, {}, {},
+                                                                                  {}, {}, {});
         handle.addSingletonComponents<DamageModel>({DAMAGE_LEVEL::N, DAMAGE_LEVEL::KK, 1e10, 1e10});
-        handle.addSingletonComponents<SID, VID>(0, 0);
+        handle.addSingletonComponents<SID, VID, PLATOONID>(0, 0, 0);
 
-        loadComponent<SingletonComponent<WheelMotionParamList>>::load(root, handle);
         loadComponent<SingletonComponent<QuadrotorMotionParamList>>::load(root, handle);
-        //add by wsb
+        // add by wsb
         loadComponent<SingletonComponent<DamageModel>>::load(root, handle);
 
         for (auto entity = root->first_node("entity"); entity; entity = entity->next_sibling("entity")) {
             auto ID = handle.newEntity();
             for (auto component = entity->first_node(0); component; component = component->next_sibling()) {
                 loadComponent<NormalComponent<Block, ProtectionModel, DamageModel, FireUnit, SensorData,
-                                              CommunicationData,
-                                              Coordinate>>::load(ID, component, handle);
+                                              CommunicationData, Coordinate>>::load(ID, component, handle);
             }
         }
     }
@@ -217,4 +217,4 @@ void UavBuilder::buildFromSource(const std::string& srcXML, UavModel& model, boo
     }
 }
 
-} // namespace carphymodel
+} // namespace uavmodel

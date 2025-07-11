@@ -42,10 +42,15 @@ public:
     // need lock?
     inline static std::mutex initLock;
     uavmodel::VID myVID;
+    uavmodel::VID myUAVID;
     uavmodel::VID getVID() {
         return myVID;
     }
-
+    uavmodel::VID getUAVID() {
+        return myUAVID;
+    }
+    uavmodel::VID myplatoonid;
+    uavmodel::VID getPlatoonID() { return myplatoonid; }
     // deg
     inline static struct Location {
         double longitude, latitude, altitude;
