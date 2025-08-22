@@ -103,4 +103,38 @@ bool UnmannedVehicleSensor::isDetectable(const Coordinate& self, const EntityInf
     return true;
 }
 
+bool UAVSensor::isDetectable(const Coordinate& self, const EntityInfo& e, const SensorData& sensor, const Hull& hull,
+                             double jammerPower) const {
+    double distance = (self.position - e.position).norm();
+    if (-self.position.z < sensor.min_detect_height || -self.position.z > sensor.max_detect_height) {
+        return false;
+    }
+    if (distance > sensor.detectrange) {
+        return false;
+    }
+    if (uavmodel::rand() >= sensor.detectprobability * e.baseInfo.hidden *
+                                (1 - e.baseInfo.active_interference_rate * distance /
+                                         e.baseInfo.active_interference_distance * e.baseInfo.jammer)) {
+        return false;
+    }
+    return true;
+}
+
+bool UAVLaserSensor::isDetectable(const Coordinate& self, const EntityInfo& e, const SensorData& sensor,
+                                  const Hull& hull, double jammerPower) const {
+    double distance = (self.position - e.position).norm();
+    // if (-self.position.z < sensor.min_detect_height || -self.position.z > sensor.max_detect_height) {
+    //     return false;
+    // }
+    if (distance > sensor.laser_maxdetectrange || distance < sensor.laser_mindetectrange) {
+        return false;
+    }
+    if (uavmodel::rand() >= sensor.detectprobability * e.baseInfo.hidden *
+                                (1 - e.baseInfo.active_interference_rate * distance /
+                                         e.baseInfo.active_interference_distance * e.baseInfo.jammer)) {
+        return false;
+    }
+    return true;
+}
+
 }; // namespace uavmodel

@@ -256,6 +256,11 @@ inline SensorData componentDeserialize<SensorData>(rapidxml::xml_node<char>* nod
     tmp.detectrange = componentDeserialize<double>(node->first_node("detectrange"));
     tmp.detectprobability = componentDeserialize<double>(node->first_node("detectprobability"));
     tmp.target_positioning_accuracy = componentDeserialize<double>(node->first_node("target_positioning_accuracy"));
+    // 用于UAV雷达和Laser雷达的参数
+    tmp.min_detect_height = componentDeserialize<double>(node->first_node("min_detect_height"));
+    tmp.max_detect_height = componentDeserialize<double>(node->first_node("max_detect_height"));
+    tmp.laser_mindetectrange = componentDeserialize<double>(node->first_node("laser_mindetectrange"));
+    tmp.laser_maxdetectrange = componentDeserialize<double>(node->first_node("laser_maxdetectrange"));
     return tmp;
 }
 
@@ -263,6 +268,10 @@ template <>
 inline CommunicationData componentDeserialize<CommunicationData>(rapidxml::xml_node<char>* node) {
     CommunicationData tmp = CommunicationData::make();
     tmp.type = componentDeserialize<std::string>(node->first_node("type"));
+    tmp.launchdelay = componentDeserialize<double>(node->first_node("launchdelay"));
+    tmp.receivedelay = componentDeserialize<double>(node->first_node("receivedelay"));
+    tmp.transdelay = componentDeserialize<double>(node->first_node("transdelay"));
+    tmp.transpower = componentDeserialize<double>(node->first_node("transpower"));
     return tmp;
 }
 
@@ -299,6 +308,9 @@ inline QuadrotorMotionParamList componentDeserialize<QuadrotorMotionParamList>(r
     tmp.JYY = componentDeserialize<double>(node->first_node("JYY"));
     tmp.JZZ = componentDeserialize<double>(node->first_node("JZZ"));
     tmp.M = componentDeserialize<double>(node->first_node("M"));
+    tmp.MAX_CLIMB_HEIGHT = componentDeserialize<double>(node->first_node("MAX_CLIMB_HEIGHT"));
+    tmp.TIED_WITH_CAR = componentDeserialize<int>(node->first_node("TIED_WITH_CAR"));
+    tmp.MAX_CONTROL_RANGE = componentDeserialize<double>(node->first_node("MAX_CONTROL_RANGE"));
     return tmp;
 }
 // template<typename T>

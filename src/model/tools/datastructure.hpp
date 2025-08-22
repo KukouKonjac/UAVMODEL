@@ -27,6 +27,7 @@ enum class COMMAND_TYPE {
     LEVELFLIGHT, // 平飞
     HOVER,       // 悬停
     BACK,
+    SURROUND, // 盘旋
     RADAR_SWITCH,
     FOLLOW_ROAD,
     SET_ROAD,
@@ -44,7 +45,8 @@ inline size_t SingleParamMask = size_t(1) << static_cast<int>(COMMAND_TYPE::CLIM
 
 inline size_t DoubleParamMask = size_t(1) << static_cast<int>(COMMAND_TYPE::LEVELFLIGHT) |
                                 size_t(1) << static_cast<int>(COMMAND_TYPE::RADAR_SWITCH) |
-                                size_t(1) << static_cast<int>(COMMAND_TYPE::SET_ROAD) /*|
+                                size_t(1) << static_cast<int>(COMMAND_TYPE::SET_ROAD) |
+                                size_t(1) << static_cast<int>(COMMAND_TYPE::SURROUND) /*|
                                  size_t(1) << static_cast<int>(COMMAND_TYPE::REPAIR)*/
     ;
 
@@ -120,6 +122,7 @@ struct ProtectionModel {
 struct Hull {
     Vector3 velocity;
     Vector3 palstance;
+    bool out_of_range = false;
 };
 
 // cardamage，越小越正常
@@ -231,20 +234,42 @@ struct FireUnit {
 
 // carsensor
 struct SensorData {
-    constexpr static const char* token_list[] = {"type", "detectrange", "detectprobability",
-                                                 "target_positioning_accuracy"};
+    constexpr static const char* token_list[] = {"type",
+                                                 "detectrange",
+                                                 "detectprobability",
+                                                 "target_positioning_accuracy",
+                                                 "min_detect_height",
+                                                 "max_detect_height",
+                                                 "laser_mindetectrange",
+                                                 "laser_maxdetectrange"};
     std::string type;
     double detectrange;
     double detectprobability;
     double target_positioning_accuracy;
+    double min_detect_height;
+    double max_detect_height;
+    double laser_mindetectrange;
+    double laser_maxdetectrange;
     static SensorData make() { return SensorData{}; }
 };
 
 // carcommunication
 struct CommunicationData {
-    constexpr static const char* token_list[] = {"type"};
+    constexpr static const char* token_list[] = {"type",       "launchdelay", "receivedelay",
+                                                 "transdelay", "jumpcount",   "transpower"};
     std::string type;
-    static CommunicationData make() { return CommunicationData{}; }
+    double launchdelay;
+    double receivedelay;
+    double transdelay;
+    double transpower;
+    static CommunicationData make() {
+        CommunicationData tmp;
+        tmp.launchdelay = 0.1;
+        tmp.receivedelay = 0.1;
+        tmp.transdelay = 0.1;
+        tmp.transpower = 1.0;
+        return CommunicationData{};
+    }
 };
 
 struct BaseInfo {
@@ -340,7 +365,9 @@ struct QuadrotorMotionParamList {
     constexpr static const char* token_list[] = {"MAX_CLIMB_SPEED",
                                                  "MAX_DIVE_SPEED",
                                                  "MAX_LEVELFLY_SPEED",
-                                                 "MAX_FLY_TIME",
+                                                 "CHARGING_EFFICIENTY"
+                                                 "BATTERY",
+                                                 "MAX_FLY_TIME "
                                                  "ROTATE_SPEED",
                                                  "LENGTH_D",
                                                  "F_MAX",
@@ -350,15 +377,22 @@ struct QuadrotorMotionParamList {
                                                  "JXX",
                                                  "JYY",
                                                  "JZZ",
-                                                 "M"};
+                                                 "M"
+                                                 "MAX_CLIMB_HEIGHT"
+                                                 "TIED_WITH_CAR"
+                                                 "MAX_CONTROL_RANGE"};
     // 最大爬升速度
     double MAX_CLIMB_SPEED;
     // 最大下降速度（垂直）
     double MAX_DIVE_SPEED;
     // 最大平飞速度
     double MAX_LEVELFLY_SPEED;
+    // 当前电量支持飞行时间（单位：秒）
+    double BATTERY;
     // 最大飞行时间（单位：秒）
     double MAX_FLY_TIME;
+    // 充电效率（最大飞行时间/充电时间）
+    double CHARGING_EFFICIENTY;
     // 最大旋转角速度
     double ROTATE_SPEED;
     // 升力系数
@@ -380,10 +414,16 @@ struct QuadrotorMotionParamList {
     double JZZ;
     // 质量
     double M;
+    // 最大爬升高度
+    double MAX_CLIMB_HEIGHT;
+    // 是否绑定车辆
+    VID TIED_WITH_CAR;
+    double MAX_CONTROL_RANGE;
     Eigen::Vector4d force;
     Eigen::Vector4d w_rotor;
     static QuadrotorMotionParamList make() {
         QuadrotorMotionParamList tmp;
+        tmp.BATTERY = 2400;
         tmp.J0 = 1.01e-5;
         tmp.JXX = 4.212e-3;
         tmp.JYY = 4.212e-3;
@@ -391,6 +431,7 @@ struct QuadrotorMotionParamList {
         tmp.M = 0.8;
         tmp.CT = 2.168e-6;
         tmp.CM = 2.136e-8;
+        tmp.TIED_WITH_CAR = 0;
         return tmp;
     }
 };
@@ -407,11 +448,27 @@ struct PathPlanningModel {
     Vector3 prePoint;
     size_t nextPoint;
 };
+struct SurroundState {
+    bool inOrbit = false;
+    bool isSurrounding = false;                // 已启动环绕
+    bool hasCompletedFirstRevolution = false;  // 第一圈完成（启动扩展）
+    bool hasCompletedSecondRevolution = false; // 外圈稳定飞行一圈完成
+
+    uavmodel::Vector3 centerPosition; // 圆心位置（固定）
+    double targetRadius = 0.0;        // 初始半径
+    double finalRadius = 0.0;         // 扩展目标半径 = 2 * targetRadius
+
+    double angleTraversed = 0.0;                 // 第一圈累计角度
+    double secondRevolutionAngleTraversed = 0.0; // 第二圈累计角度
+
+    double lastAngle = 0.0; // 上次角度，用于差值计算
+};
 
 using Components = ComponentManager<
     SingletonComponent<Coordinate, DamageModel, CommandBuffer, EventBuffer, HitEventQueue, FireEventQueue,
                        WheelMotionParamList, QuadrotorMotionParamList, ScannedMemory, Sphere, Hull, SID, VID, PLATOONID,
-                       PathPlanningModel, SystemScannedMemory, SystemScannedMemoryget, CommunicaionMemory>,
+                       PathPlanningModel, SystemScannedMemory, SystemScannedMemoryget, CommunicaionMemory,
+                       SurroundState>,
     NormalComponent<Coordinate, DamageModel, Block, ProtectionModel, FireUnit, SensorData, CommunicationData>>;
 
 }; // namespace uavmodel

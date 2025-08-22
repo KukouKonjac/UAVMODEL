@@ -23,8 +23,8 @@ bool Comm::Comm_test(double Posa_x, double Posa_y, double Posa_z, double Posb_x,
     static Comm comm1, comm2;
     Comm* c1 = &comm1;
     Comm* c2 = &comm2;
-    comm1.Init();
-    comm2.Init();
+    comm1.Init(10.0);
+    comm2.Init(10.0);
     comm1.Comm_Init(c2);
     comm2.Comm_Init(c1);
     // Setinput
@@ -65,7 +65,7 @@ bool Comm::Comm_test(double Posa_x, double Posa_y, double Posa_z, double Posb_x,
     return connect;
 }
 
-bool Comm::Init() {
+bool Comm::Init(double Pt) {
     // 参考短波通信
     // f：960–1215 MHz，Bw：3 MHz，Rb：115.2k 功率参考：SINCGARS 10W 一般有效距离35KM
     // 发射机
@@ -75,7 +75,7 @@ bool Comm::Init() {
     tran_para.Comm_Set_alt = 0.0;
     tran_para.Comm_Set_Freq = 0.1;     // GHz 100MHz
     tran_para.Comm_Set_Freq_Bw = 2e06; // b/s
-    tran_para.Comm_Set_Power = 10.0;
+    tran_para.Comm_Set_Power = Pt;
     tran_para.Comm_Set_T = 290.0;
     tran_para.Comm_Set_Rb = 115.2e03;
     // 接收机
@@ -85,7 +85,7 @@ bool Comm::Init() {
     rec_para.Comm_Set_alt = 0.0;
     rec_para.Comm_Set_Freq = 0.1;
     rec_para.Comm_Set_Freq_Bw = 2e06;
-    rec_para.Comm_Set_Power = 10.0;
+    rec_para.Comm_Set_Power = Pt;
     rec_para.Comm_Set_T = 290.0;
     rec_para.Comm_Set_Rb = 115.2e03;
     // 干扰机
@@ -429,5 +429,42 @@ void Comm::Get() {
 double Comm::GetPr() { return P_r; }
 double Comm::GetPn() { return P_n; }
 bool Comm::Getconnect() { return connect; }
+
+double Comm::getRequiredTransmitPower(double max_distance) {
+    // 临界信噪比（ber=1e-5对应的SNR）
+    double SNR_THRESHOLD = 9.09; // 单位：dB
+    if (max_distance <= 0) {
+        return 0.0;
+    }
+
+    // 计算路径损耗（根据距离选择对应模型）
+    double Path_Loss = 0;
+    double dc = 4 * 3.1415926 * (3 * 3) / (3 * 1e8 / (1 * 1e8)); // 约37.7米（路径损耗模型切换阈值）
+
+    if (max_distance >= dc) {
+        // 双线反射模型
+        Path_Loss = 40 * log10(max_distance) - (20 * log10(3) + 20 * log10(3));
+    } else {
+        // 自由空间损耗模型
+        Path_Loss = 32.45 + 20 * log10(max_distance) + 20 * log10(tran_para.Comm_Set_Freq);
+    }
+
+    //  计算噪声功率P_n（单位：dBm）
+    double B = tran_para.Comm_Set_Freq_Bw; // 带宽
+    double P_n = 10 * log10((1.38 * 1e-23) * rec_para.Comm_Set_T * B * 1e3) + 5 + Pnj_r;
+
+    // Atmos()返回值单位为dB/km，需转换为dB（距离单位：米 → 公里）
+    double atmosAttenuation = Atmos() * max_distance / 1000.0;
+
+    // 由 SNR = P_r - P_n → P_r = SNR_THRESHOLD + P_n
+    double P_r = SNR_THRESHOLD + P_n;
+
+    // 由 P_r = P_t - Path_Loss - atmosAttenuation + G（G=0，忽略天线增益）
+    double P_t_dBm = P_r + Path_Loss + atmosAttenuation;
+    // 转换公式：功率(W) = 10^((dBm - 30)/10)
+    double P_t_W = pow(10.0, (P_t_dBm - 30.0) / 10.0);
+
+    return P_t_W;
+}
 
 } // namespace externModel::comm

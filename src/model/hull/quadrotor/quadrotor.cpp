@@ -13,6 +13,9 @@ PID uavmodel::QuadrotorMoveSystem::pid_phi(0.5, 0.01, 5.0);
 PID uavmodel::QuadrotorMoveSystem::pid_theta(0.5, 0.01, 5.0);
 PID uavmodel::QuadrotorMoveSystem::pid_psi(0.1, 0.0, 10.0);
 
+double uavmodel::QuadrotorMoveSystem::height_pid_integral = 0;
+double uavmodel::QuadrotorMoveSystem::height_pid_last_error = 0;
+
 namespace {
 
 using namespace uavmodel;
@@ -153,7 +156,7 @@ void QuadrotorMoveSystem::tick(double dt, Coordinate& baseCoordinate, Hull& hull
     double psi_ref = expectYaw; // std::atan2(v_ref_direction(1), v_ref_direction(0)); // 偏航角计算
     // 速度误差计算
     Eigen::Vector3d e_v = {v_ref(0) - hull.velocity.x, v_ref(1) - hull.velocity.y, 0}; // z轴不直接控制速度，控制高度
-    double e_z = expectHeight + baseCoordinate.position.z;                             // 北东地坐标系
+    double e_z = std::min(expectHeight, params.MAX_CLIMB_HEIGHT) + baseCoordinate.position.z; // 北东地坐标系
     pid_vx.setError(e_v(0));
     pid_vy.setError(e_v(1));
     pid_z.setError(e_z);
@@ -211,7 +214,7 @@ void QuadrotorMoveSystem::tick(double dt, Coordinate& baseCoordinate, Hull& hull
     //// 更新速度和角速度
     hull.velocity = new_velocity;
     hull.palstance = new_palstance;
-    params.MAX_FLY_TIME -= dt;
+    params.BATTERY -= dt;
     return;
 }
 
@@ -220,41 +223,89 @@ void QuadrotorMoveSystem::tickspecific(double dt, Coordinate& baseCoordinate, Hu
     double m = params.M;
     double g = 9.8;
     double psi_ref = expectYaw;
-    double e_z = expectHeight + baseCoordinate.position.z;
     uavmodel::Vector3 temp_rotation = Quaternion::fromCompressedQuaternion(baseCoordinate.attitude).getEuler();
-    const double MAX_LINEAR_ACC = 5.0;                                    // 最大线加速度(m/s²)
+    const double MAX_LINEAR_ACC = 10;                                     // 最大线加速度(m/s²)
     uavmodel::Vector3 v_ref_direction(cos(expectYaw), sin(expectYaw), 0); // 期望方向
     // v_ref_direction.normalize();
     uavmodel::Vector3 v_ref = v_ref_direction * std::min(expectSpeed, params.MAX_LEVELFLY_SPEED);
     // 1. 计算期望加速度（速度控制）
-    double v_z = std::max(-1 * params.MAX_DIVE_SPEED, std::min(params.MAX_CLIMB_SPEED, e_z / dt)); // 向上为正
-    v_ref.z = -1 * v_z;
+    double target_z = -std::min(expectHeight, params.MAX_CLIMB_HEIGHT);
+    double height_error = baseCoordinate.position.z - target_z;
+
+    // PID 参数（可调）
+    double Kp = 1.5;
+    double Ki = 0.0;
+    double Kd = 3.0;
+
+    // 积分项更新
+    height_pid_integral += height_error * dt;
+    // 防止积分饱和（可调）
+    height_pid_integral = std::clamp(height_pid_integral, -2.0, 2.0);
+    double derivative = (dt > 1e-6) ? (height_error - height_pid_last_error) / dt : 0.0;
+
+    double acc_z_desired = -(Kp * height_error + Ki * height_pid_integral + Kd * derivative);
+    /*std::cout << Kp * height_error << " " << Ki * height_pid_integral << " " << Kd * derivative << " ";*/
+    acc_z_desired = std::clamp(acc_z_desired, -MAX_LINEAR_ACC, MAX_LINEAR_ACC);
+
+    height_pid_last_error = height_error; // 更新上一次误差
+
     uavmodel::Vector3 target_acc{0, 0, 0};
     uavmodel::Vector3 vel_error = v_ref - hull.velocity;
-    double acc_magnitude = std::min(vel_error.norm() / dt, MAX_LINEAR_ACC);
-    if (vel_error.norm() != 0)
-        target_acc = vel_error.normalize() * acc_magnitude;
-    target_acc.z = -1 * target_acc.z;
+    double acc_magnitude_xy = std::min(vel_error.norm() / dt, MAX_LINEAR_ACC);
+    if (vel_error.norm() > 1e-6) {
+        uavmodel::Vector3 dir = vel_error.normalize();
+        target_acc.x = dir.x * acc_magnitude_xy;
+        target_acc.y = dir.y * acc_magnitude_xy;
+    }
+    target_acc.z = acc_z_desired;
+
     // 2. 计算期望角速度（方向控制）
     double U1 = m * std::sqrt(target_acc.x * target_acc.x + target_acc.y * target_acc.y +
                               (target_acc.z + g) * (target_acc.z + g));
-    double phi_ref = std::asin(m * (target_acc.x * std::sin(psi_ref) - target_acc.y * std::cos(psi_ref)) / U1);
-    double theta_ref =
-        std::asin(m * (target_acc.x * std::cos(psi_ref) + target_acc.y * std::sin(psi_ref)) / (U1 * std::cos(phi_ref)));
+
+    double phi_ref = 0.0, theta_ref = 0.0;
+    if (U1 > 1e-6) {
+        double sin_phi = m * (target_acc.x * std::sin(psi_ref) - target_acc.y * std::cos(psi_ref)) / U1;
+        sin_phi = std::clamp(sin_phi, -0.999, 0.999);
+        phi_ref = std::asin(sin_phi);
+
+        double cos_phi = std::cos(phi_ref);
+        if (std::abs(cos_phi) > 1e-6) {
+            double sin_theta =
+                m * (target_acc.x * std::cos(psi_ref) + target_acc.y * std::sin(psi_ref)) / (U1 * cos_phi);
+            sin_theta = std::clamp(sin_theta, -0.999, 0.999);
+            theta_ref = std::asin(sin_theta);
+        }
+    }
+
     // 3. 角速度限制
     uavmodel::Vector3 angular_vel = {
         clamp((phi_ref - temp_rotation.x) / dt, -params.ROTATE_SPEED, params.ROTATE_SPEED),
         clamp((theta_ref - temp_rotation.y) / dt, -params.ROTATE_SPEED, params.ROTATE_SPEED),
         clamp((psi_ref - temp_rotation.z) / dt, -params.ROTATE_SPEED, params.ROTATE_SPEED)};
     // 3. 直接更新状态（简化动力学）
-    hull.velocity += {target_acc.x * dt, target_acc.y * dt, -1 * target_acc.z * dt};
-    hull.palstance = angular_vel;
-    baseCoordinate.position += hull.velocity * dt;
-    const Quaternion new_altitude = {temp_rotation.x + hull.palstance.x * dt, temp_rotation.y + hull.palstance.y * dt,
+    // 超出最大飞行时间时失去控制
+    if (params.BATTERY >= 0) {
+        hull.velocity += target_acc * dt;
+        hull.velocity.z = std::clamp(hull.velocity.z, -params.MAX_CLIMB_SPEED, params.MAX_CLIMB_SPEED);
+        // std::cout << target_acc.z <<" "<< hull.velocity.z << std::endl;
+        hull.palstance = angular_vel;
+        baseCoordinate.position += hull.velocity * dt;
+    } else {
+        hull.velocity.x = 0;
+        hull.velocity.y = 0;
+        hull.velocity.z += g * dt;
+        baseCoordinate.position += hull.velocity * dt;
+        if (baseCoordinate.position.z >= 0.0) {
+            baseCoordinate.position.z = 0.0;
+            hull.velocity.z = 0.0;
+        }
+    }
+    const Quaternion new_attitude = {temp_rotation.x + hull.palstance.x * dt, temp_rotation.y + hull.palstance.y * dt,
                                      temp_rotation.z + hull.palstance.z * dt};
-    baseCoordinate.attitude = new_altitude.toCompressedQuaternion();
+    baseCoordinate.attitude = new_attitude.toCompressedQuaternion();
     //// 更新速度和角速度
-    params.MAX_FLY_TIME -= dt;
+    params.BATTERY -= dt;
     return;
 }
 

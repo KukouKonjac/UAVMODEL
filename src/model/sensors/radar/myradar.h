@@ -44,4 +44,16 @@ class UnmannedVehicleSensor final : public Sensor {
                                double jammerPower = 0.) const override;
 };
 
+class UAVSensor final : public Sensor {
+  public:
+    virtual bool isDetectable(const Coordinate& self, const EntityInfo& e, const SensorData& sensor, const Hull& hull,
+                              double jammerPower = 0.) const override;
+};
+
+class UAVLaserSensor final : public Sensor {
+  public:
+    virtual bool isDetectable(const Coordinate& self, const EntityInfo& e, const SensorData& sensor, const Hull& hull,
+                              double jammerPower = 0.) const override;
+};
+
 }

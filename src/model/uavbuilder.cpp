@@ -194,8 +194,8 @@ void UavBuilder::buildFromSource(const std::string& srcXML, UavModel& model, boo
     if (auto handle = model.components.getModifier()) {
         handle.addSingletonComponents<CommandBuffer, EventBuffer, DamageModel, Coordinate, HitEventQueue,
                                       FireEventQueue, ScannedMemory, Hull, PathPlanningModel, SystemScannedMemory,
-                                      SystemScannedMemoryget, CommunicaionMemory>({}, {}, {}, {}, {}, {}, {}, {}, {},
-                                                                                  {}, {}, {});
+                                      SystemScannedMemoryget, CommunicaionMemory, SurroundState>(
+            {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {});
         handle.addSingletonComponents<DamageModel>({DAMAGE_LEVEL::N, DAMAGE_LEVEL::KK, 1e10, 1e10});
         handle.addSingletonComponents<SID, VID, PLATOONID>(0, 0, 0);
 

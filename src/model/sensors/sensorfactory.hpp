@@ -13,7 +13,9 @@ struct SensorFactory : public Factory<SensorFactory, Sensor>{
         {"scopesensor",std::make_shared<ScopeSensor>()},
         {"photoelectricitysensor", std::make_shared<photoelectricitySensor>()},
         {"supportvehicleradar", std::make_shared<SupportVehicleRadar>()},
-        {"unmannedvehiclesensor", std::make_shared<UnmannedVehicleSensor>()}
+        {"unmannedvehiclesensor", std::make_shared<UnmannedVehicleSensor>()},
+        {"uavsensor", std::make_shared<UAVSensor>()},
+        {"uavlasersensor", std::make_shared<UAVLaserSensor>()}
     };
 };
 

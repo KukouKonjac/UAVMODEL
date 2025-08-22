@@ -1,146 +1,244 @@
-﻿#include <iostream>
+﻿#include "Windows.h"
+#include <iostream>
 #include <tuple>
 
 #include "../basetest.h"
+#define M_PI 3.14159265358979323846
+using namespace std;
+
 int main() {
-    int testmode = 5;
-    using namespace std;
+    // 初始化无人机模型
+    SetConsoleOutputCP(CP_UTF8);
     uavmodel::UavModel model;
-    buildBaseModel("D:/cqmodel/rule_framework/car.xml", model);
+    buildBaseModel("D:\\cqmodel\\rule_framework\\car.xml", model);
+
+    // 获取命令缓冲区
     auto& buffer = model.components.getSpecificSingleton<uavmodel::CommandBuffer>().value();
-    int flag = 0;
-    // 测试维修保障指标/最大速度/加速时间-------------------------------
-    if (testmode == 1) {
-        auto& damage = model.components.getSpecificSingleton<uavmodel::DamageModel>().value();
-        damage.damageLevel = DAMAGE_LEVEL::K;
-        double acc_time = 0;
-        for (int i = 0; i < 200; ++i) {
-            buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(2), any(tuple<double, double>(100, 0)));
-            model.tick(0.1);
-            if (damage.damageLevel == DAMAGE_LEVEL::N &&
-                model.components.getSpecificSingleton<uavmodel::Hull>().value().velocity.norm() == 0) {
-                cout << "fix time: " << 0.1 * i << " current velocity: "
-                     << model.components.getSpecificSingleton<uavmodel::Hull>().value().velocity.norm() * 3.6 << "km/h"
-                     << endl;
-            } else if (damage.damageLevel == DAMAGE_LEVEL::N) {
-                cout << "fixed "
-                     << " current velocity: "
-                     << model.components.getSpecificSingleton<uavmodel::Hull>().value().velocity.norm() * 3.6 << "km/h"
-                     << endl;
-                acc_time += 0.1;
-            } else
-                cout << "fixing..."
-                     << "current velocity: "
-                     << model.components.getSpecificSingleton<uavmodel::Hull>().value().velocity.norm() * 3.6 << "km/h"
-                     << endl;
-            if (model.components.getSpecificSingleton<uavmodel::Hull>().value().velocity.norm() * 3.6 >= 32 &&
-                flag == 0) {
-                cout << "加速时间： " << acc_time << "s" << endl;
-                flag = 1;
-            }
-        }
-    } else if (testmode == 2) ////测试制动距离---------------------------------
-    {
-        for (int i = 0; i < 200; ++i) {
-            buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(2), any(tuple<double, double>(100, 0)));
-            model.tick(0.1);
-        }
-        buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(5), any(tuple<double, double>(0, 0)));
-        model.tick(0.1);
 
-        uavmodel::Vector3 pos_startstop;
-        for (int i = 0; i < 200; ++i) {
-            buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(5), any(tuple<double, double>(0, 0)));
-            model.tick(0.1);
-            cout << "stoping... "
-                 << "current velocity: "
-                 << model.components.getSpecificSingleton<uavmodel::Hull>().value().velocity.norm() * 3.6 << "km/h"
-                 << endl;
-            if (model.components.getSpecificSingleton<uavmodel::Hull>().value().velocity.norm() * 3.6 <= 32 &&
-                flag == 1) {
-                pos_startstop = model.components.getSpecificSingleton<uavmodel::Coordinate>().value().position;
-                flag = 2;
+    // 获取并初始化环绕状态
+    auto& surroundState = model.components.getSpecificSingleton<uavmodel::SurroundState>().value();
+    auto& motionParam = model.components.getSpecificSingleton<uavmodel::QuadrotorMotionParamList>().value();
+
+    // 记录最大爬升高度
+    double max_climb_height = 0;
+    double max_levelfly_speed = 0;
+
+    // 获取最大飞行时间
+    double max_fly_time =
+        model.components.getSpecificSingleton<uavmodel::QuadrotorMotionParamList>().value().MAX_FLY_TIME;
+
+    // 写入文件
+    std::vector<std::pair<double, double>> trajectory;
+    const std::string base_path = "D:/GitHubProject/UAVMODEL/test/abilitytest/pythonProject/";
+
+    bool Out_of_Range_Mark = false;
+    int testmode = 3;
+    double flag = false;
+    if (testmode == 0) {
+        for (int i = 0; i < 2000; i++) {
+            auto& coordinate = model.components.getSpecificSingleton<uavmodel::Coordinate>().value().position;
+            double current_height = -coordinate.z;
+            buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(1), any(tuple<double, double>(8000, true)));
+            max_climb_height = max(max_climb_height, current_height);
+            // 输出：当前电量和当前高度
+            cout << " 爬升高度:  " << current_height << "m" << endl;
+            model.tick(0.05);
+            // if ( - coordinate.z > motionParam.MAX_CLIMB_HEIGHT) {
+            //     break;
+            // }
+        }
+        for (int i = 0; i < 2000; i++) {
+            auto& coordinate = model.components.getSpecificSingleton<uavmodel::Coordinate>().value().position;
+            double current_height = -coordinate.z;
+            buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(3), any(tuple<double, double>(8000, true)));
+            max_climb_height = max(max_climb_height, current_height);
+            // 输出：当前电量和当前高度
+            cout << " 爬升高度:  " << current_height << "m" << endl;
+            model.tick(0.05);
+            // if ( - coordinate.z > motionParam.MAX_CLIMB_HEIGHT) {
+            //     break;
+            // }
+        }
+        cout << "==================================================" << endl;
+        cout << "无人机升限 = " << max_climb_height << "m" << endl;
+        cout << "==================================================" << endl;
+    } else if (testmode == 1) {
+        motionParam.BATTERY = 0;
+        double max_charge_time = 0;
+        while (motionParam.BATTERY < motionParam.MAX_FLY_TIME) {
+            cout << "正在充电，当前电量 = " << motionParam.BATTERY / 60 << "min" << endl;
+            max_charge_time += 0.05;
+            model.tick(0.05);
+            if ((motionParam.BATTERY == motionParam.MAX_FLY_TIME)) {
+                cout << "充电完成，总耗时 = " << max_charge_time / 60 << "min" << endl;
             }
-            if (model.components.getSpecificSingleton<uavmodel::Hull>().value().velocity.norm() == 0) {
-                cout << "stop distance: "
-                     << (model.components.getSpecificSingleton<uavmodel::Coordinate>().value().position - pos_startstop)
-                            .norm()
-                     << "m" << endl;
+        }
+        buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(1), any(tuple<double, double>(8000, true)));
+        model.tick(0.05);
+        auto& coordinate = model.components.getSpecificSingleton<uavmodel::Coordinate>().value().position;
+        // 模拟飞行过程，循环执行3000次tick
+        for (int i = 1; i <= 360000; ++i) {
+            buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(3), any(tuple<double, double>(200, 0)));
+            auto& velocity = model.components.getSpecificSingleton<uavmodel::Hull>().value().velocity;
+            // 输出信息
+            if (max_levelfly_speed < velocity.norm()) {
+                cout << "已充满电   当前速度:  " << velocity.norm() / 3.6 << "km/h" << endl;
+            } else {
+                break;
+            }
+            max_levelfly_speed = max(max_levelfly_speed, velocity.norm());
+            model.tick(0.05);
+        }
+    } else if (testmode == 2) {
+        get<1>((*(model.components.getSpecificSingleton<uavmodel::SystemScannedMemory>()))[1]) =
+            // EntityInfo{.position = {1000, 0, 0},
+            EntityInfo{.position = {100, 0, 0},
+                       .velocity = {20, 0, 0},
+                       .baseInfo = {BaseInfo::ENTITY_TYPE::SUPPORTCAR, 1, 1, DAMAGE_LEVEL::N, 0, 1, 0, 3000.0, 1}};
+
+        model.components.getSpecificSingleton<uavmodel::SID>() = 1;
+        model.components.getSpecificSingleton<uavmodel::PLATOONID>() = 1;
+        buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(0), any(tuple<double, double>(true, true)));
+        model.tick(0.05);
+        auto ReleasePosition = model.components.getSpecificSingleton<Coordinate>().value().position;
+        buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(1), any(tuple<double, double>(8000, true)));
+        model.tick(0.05);
+        auto& coordinate = model.components.getSpecificSingleton<uavmodel::Coordinate>().value().position;
+        // 模拟飞行过程，循环执行3000次tick
+        for (int i = 1; i <= 360000; ++i) {
+            buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(3), any(tuple<double, double>(200, 0)));
+            auto& velocity = model.components.getSpecificSingleton<uavmodel::Hull>().value().velocity;
+            // 输出信息
+            if (max_levelfly_speed < velocity.norm()) {
+                cout << "飞行时间:  " << setw(15) << fixed << motionParam.MAX_FLY_TIME - motionParam.BATTERY << "min"
+                     << "   距离UAV操控台:  " << (coordinate - ReleasePosition).norm() / 1000 << "km" << endl;
+            }
+            model.tick(0.05);
+            if (model.components.getSpecificSingleton<Hull>().value().out_of_range && !Out_of_Range_Mark) {
+                cout << "==================================================" << endl;
+                cout << "无人机超出控制范围，控制范围 = " << (coordinate - ReleasePosition).norm() / 1000 << "km"
+                     << endl;
+                cout << "==================================================" << endl;
+                Out_of_Range_Mark = true;
+                /*break;*/
+            }
+
+            if (motionParam.BATTERY <= 0) {
+                cout << "==================================================" << endl;
+                cout << "到达最大飞行时间 = " << fixed << setprecision(2) << (max_fly_time - motionParam.BATTERY) / 60
+                     << "min" << endl;
+                cout << "==================================================" << endl;
                 break;
             }
         }
-    } else if (testmode == 3) { ////测试装甲防护指标----------------------------
-        auto& protect = get<1>(*model.components.getNormal<uavmodel::ProtectionModel>().begin());
-        cout << "armor front: " << protect.armor_front << "m" << endl
-             << "armor back: " << protect.armor_back << "m" << endl
-             << "armor side: " << protect.armor_side << "m" << endl
-             << "armor top: " << protect.armor_top << "m" << endl
-             << "armor bottom: " << protect.armor_bottom << "m" << endl;
-    } else if (testmode == 4) // 测试最大行程
-    {
-        buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(2), any(tuple<double, double>(100, 0)));
-        model.tick(0.1);
+    } else if (testmode == 3) {
+        get<1>((*(model.components.getSpecificSingleton<uavmodel::SystemScannedMemory>()))[1]) =
+            // EntityInfo{.position = {1000, 0, 0},
+            EntityInfo{.position = {100, 0, 0},
+                       .velocity = {20, 0, 0},
+                       .baseInfo = {BaseInfo::ENTITY_TYPE::SUPPORTCAR, 1, 1, DAMAGE_LEVEL::N, 0, 1, 0, 3000.0, 1}};
 
-        uavmodel::Vector3 pos_startstop =
-            model.components.getSpecificSingleton<uavmodel::Coordinate>().value().position;
-        for (int i = 0; i < 2000; ++i) {
-            buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(2), any(tuple<double, double>(100, 0)));
-            model.tick(100);
-            cout << "stoping... "
-                 << "current velocity: "
-                 << model.components.getSpecificSingleton<uavmodel::Hull>().value().velocity.norm() * 3.6 << "km/h"
+        model.components.getSpecificSingleton<uavmodel::SID>() = 1;
+        model.components.getSpecificSingleton<uavmodel::PLATOONID>() = 1;
+        buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(0), any(tuple<double, double>(true, true)));
+        model.tick(0.05);
+        for (int i = 0; i < 100; i++) {
+            buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(1), any(tuple<double, double>(200, true)));
+            model.tick(0.05);
+            get<1>((*(model.components.getSpecificSingleton<uavmodel::SystemScannedMemory>()))[1]).position.x +=
+                0.05 * 20;
+            cout << "Support Car Speed = "
+                 << model.components.getSpecificSingleton<uavmodel::Hull>().value().velocity.norm() / 3.6 << "km/h"
                  << endl;
-            if (model.components.getSpecificSingleton<uavmodel::WheelMotionParamList>().value().OIL_REMAIN - 0 < 0.01) {
-                cout << "最大行程: "
-                     << (model.components.getSpecificSingleton<uavmodel::Coordinate>().value().position - pos_startstop)
-                                .norm() /
-                            1000
-                     << "km" << endl;
+            if (model.components.getSpecificSingleton<uavmodel::Coordinate>().value().position.z <= -10) {
+                cout << "UAV升空成功，Support Car 速度 = "
+                     << model.components.getSpecificSingleton<uavmodel::Hull>().value().velocity.norm() / 3.6 << "km/h"
+                     << endl;
                 break;
             }
         }
-    } else if (testmode == 5) // 测试无人机运动平台模型
-    {
-        /*buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(4), any(tuple<double, double>(20, PI / 4)));
-        model.tick(0.01);
-        */
-        std::ofstream outFile("posuav_output.txt");
-        for (int i = 0; i < 1; ++i) {
-            buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(1), any(tuple<double, double>(50, 0)));
+
+    } else if (testmode == 4) {
+        get<1>((*(model.components.getSpecificSingleton<uavmodel::SystemScannedMemory>()))[1]) =
+            // EntityInfo{.position = {1000, 0, 0},
+            EntityInfo{.position = {100, 0, 0},
+                       .velocity = {60, 10, 0},
+                       .baseInfo = {BaseInfo::ENTITY_TYPE::SUPPORTCAR, 1, 1, DAMAGE_LEVEL::N, 0, 1, 0, 3000.0, 1}};
+        model.components.getSpecificSingleton<Coordinate>().value().position = {0, 0, 0};
+
+        auto& cur_pos = model.components.getSpecificSingleton<Coordinate>().value().position;
+        auto& cur_vel = model.components.getSpecificSingleton<Hull>().value().velocity;
+        auto& tar_pos = get<1>((*(model.components.getSpecificSingleton<uavmodel::SystemScannedMemory>()))[1]).position;
+        auto& tar_vel = get<1>((*(model.components.getSpecificSingleton<uavmodel::SystemScannedMemory>()))[1]).velocity;
+
+        cout << cur_pos << endl;
+        model.components.getSpecificSingleton<uavmodel::SID>() = 1;
+        model.components.getSpecificSingleton<uavmodel::PLATOONID>() = 1;
+        buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(1), any(tuple<double, double>(200, true)));
+        while (-cur_pos.z < 199) {
+            cout << cur_pos << endl;
+            tar_pos.x += 0.05 * 60;
+            tar_pos.y += 0.05 * 10;
             model.tick(0.05);
-            std::cout << "Position Error: "
-                      << uavmodel::Vector3{100, 100, 0} -
-                             model.components.getSpecificSingleton<uavmodel::Coordinate>().value().position
-                      << std::endl;
-            std::cout << "Velocity " << model.components.getSpecificSingleton<uavmodel::Hull>().value().velocity.x
-                      << "m/s" << std::endl;
-            std::cout << "height" << model.components.getSpecificSingleton<uavmodel::Coordinate>().value().position.z
-                      << "m" << std::endl;
-            std::cout << "time " << 0.01 * i << "s" << std::endl;
         }
-        for (int i = 0; i < 600; ++i) {
-            /*double dis = 359 - model.components.getSpecificSingleton<uavmodel::Coordinate>().value().position.x;
-            double speed = dis > 200 ? 20 : floor(dis / 10);*/
-            buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(3), any(tuple<double, double>(20, 0.785)));
+        cout << "Take Off" << endl;
+        while ((cur_pos - tar_pos).norm() > 0 || (cur_vel - tar_vel).norm() > 0) {
+            buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(5), any(tuple<double, double>(1, true)));
+            tar_pos.x += 0.05 * 60;
+            tar_pos.y += 0.05 * 10;
             model.tick(0.05);
-            std::cout << "Position Error: "
-                      << uavmodel::Vector3{100, 100, 0} -
-                             model.components.getSpecificSingleton<uavmodel::Coordinate>().value().position
-                      << std::endl;
-            outFile << "posx = " << model.components.getSpecificSingleton<uavmodel::Coordinate>().value().position.x
-                    << ", posy = " << model.components.getSpecificSingleton<uavmodel::Coordinate>().value().position.y
-                    << ", posz = "
-                    << -1 * model.components.getSpecificSingleton<uavmodel::Coordinate>().value().position.z
-                    << ", vel = " << model.components.getSpecificSingleton<uavmodel::Hull>().value().velocity.norm()
-                    << endl;
-            std::cout << "Velocity " << model.components.getSpecificSingleton<uavmodel::Hull>().value().velocity.x
-                      << "m/s" << std::endl;
-            double x = model.components.getSpecificSingleton<uavmodel::Coordinate>().value().position.z * -1;
-            std::cout << "height"
-                      << model.components.getSpecificSingleton<uavmodel::Coordinate>().value().position.z * -1 << "m"
-                      << std::endl;
-            std::cout << "time " << 0.01 * i << "s" << std::endl;
+            trajectory.emplace_back(cur_pos.x, cur_pos.y);
+            cout << "UAV与ZY战车距离" << (cur_pos - tar_pos).norm() << "m" << endl;
+        }
+
+    } else if (testmode == 5) {
+        buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(1), any(tuple<double, double>(8000, true)));
+        model.tick(0.05);
+        auto& coordinate = model.components.getSpecificSingleton<uavmodel::Coordinate>().value().position;
+        auto& velocity = model.components.getSpecificSingleton<uavmodel::Hull>().value().velocity;
+        velocity = {180, 0, 0};
+        trajectory.emplace_back(coordinate.x, coordinate.y);
+        // 模拟飞行过程，循环执行3000次tick
+        for (int i = 1; i <= 10000; ++i) {
+            buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(6), any(tuple<double, double>(3000, 0)));
+            model.tick(0.05);
+            auto& pos = model.components.getSpecificSingleton<uavmodel::Coordinate>().value().position;
+            auto& state = model.components.getSpecificSingleton<uavmodel::SurroundState>().value();
+            trajectory.emplace_back(pos.x, pos.y);
+
+            std::cout << sqrt((pos.x - 3000) * (pos.x - 3000) + pos.y * pos.y) << " " << velocity.norm() << std::endl;
+            if (state.hasCompletedSecondRevolution == true) {
+                break;
+            }
         }
     }
+    std::ofstream file(base_path + "trajectory.csv");
+    if (file.is_open()) {
+        file << "x,y\n"; // CSV 头
+        for (const auto& point : trajectory) {
+            file << point.first << "," << point.second << "\n";
+        }
+        file.close();
+        std::cout << "✅ 轨迹已保存到: " << base_path << "trajectory.csv" << std::endl;
+    } else {
+        std::cerr << "❌ 无法创建 trajectory.csv！路径可能错误或无权限: " << base_path << std::endl;
+    }
+
+    // === 🟢 写入参考圆（理想轨道）===
+    std::ofstream ref_file(base_path + "circle_ref.csv");
+    if (ref_file.is_open()) {
+        ref_file << "cx,cy\n";
+        for (int i = 0; i <= 360; ++i) {
+            double theta = i * M_PI / 180.0;
+            double x = 3000.0 + 3000.0 * std::cos(theta);
+            double y = 0.0 + 3000.0 * std::sin(theta);
+            ref_file << x << "," << y << "\n";
+        }
+        ref_file.close();
+        std::cout << "✅ 参考圆已保存到: " << base_path << "circle_ref.csv" << std::endl;
+    } else {
+        std::cerr << "❌ 无法创建 circle_ref.csv！路径可能错误或无权限: " << base_path << std::endl;
+    }
+
     return 0;
 }

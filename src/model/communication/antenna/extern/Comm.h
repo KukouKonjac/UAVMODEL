@@ -16,7 +16,7 @@ class Comm {
   public:
     Comm();
     ~Comm();
-    bool Init();
+    bool Init(double Pt);
     bool tran_Init(const Fixed_para& tran);
     bool rec_Init(const Fixed_para& rec);
     bool Comm_Init(Comm* comm1);
@@ -34,7 +34,7 @@ class Comm {
     double GetPr();
     double GetPn();
     bool Getconnect();
-
+    double getRequiredTransmitPower(double max_distance);
     bool Comm_test(double Posa_x, double Posa_y, double Posa_z, double Posb_x, double Posb_y, double Posb_z,
                    double FT_comm);
 

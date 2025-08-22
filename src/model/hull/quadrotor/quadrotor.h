@@ -20,6 +20,17 @@ class QuadrotorMoveSystem {
     static PID pid_phi;   // 控制姿态 roll
     static PID pid_theta; // 控制姿态 pitch
     static PID pid_psi;   // 控制偏航角 yaw
+
+        // PID
+    static double height_pid_integral;
+    static double height_pid_last_error;
+
+    // 可选：重置 PID 的函数
+    void resetHeightPID() {
+        height_pid_integral = 0.0;
+        height_pid_last_error = 0.0;
+    }
+
   public:
     QuadrotorMoveSystem() = default;
 
