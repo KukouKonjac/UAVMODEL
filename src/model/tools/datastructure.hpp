@@ -327,6 +327,10 @@ struct CommunicaionMemory : public std::map<VID, CommuState> {};
 struct SystemScannedMemoryget : public std::map<VID, std::map<VID, std::tuple<double, EntityInfo>>> {};
 // struct SystemScannedMemoryget : public std::map<VID, std::map<VID, std::tuple<double, EntityInfo>>> {};
 
+// 20250820 hx 优化时延结构OptCommMemory和OptCommResult
+struct OptCommMemory : public std::map<VID, std::map<VID, std::tuple<CommuState>>> {};
+struct OptCommResult : public std::map<VID, std::map<VID, std::tuple<double, bool, std::vector<VID>>>> {};
+
 struct WheelMotionParamList {
     constexpr static const char* token_list[] = {"-angle", "LENGTH", "MAX_ANGLE", "ROTATE_SPEED", "MAX_LINEAR_SPEED",
                                                  "MAX_FRONT_ACCELERATION", "MAX_BRAKE_ACCELERATION",
@@ -468,7 +472,7 @@ using Components = ComponentManager<
     SingletonComponent<Coordinate, DamageModel, CommandBuffer, EventBuffer, HitEventQueue, FireEventQueue,
                        WheelMotionParamList, QuadrotorMotionParamList, ScannedMemory, Sphere, Hull, SID, VID, PLATOONID,
                        PathPlanningModel, SystemScannedMemory, SystemScannedMemoryget, CommunicaionMemory,
-                       SurroundState>,
+                       SurroundState, OptCommMemory, OptCommResult>,
     NormalComponent<Coordinate, DamageModel, Block, ProtectionModel, FireUnit, SensorData, CommunicationData>>;
 
 }; // namespace uavmodel

@@ -1,7 +1,110 @@
 ﻿#include "communication.h"
 #include "../../src/model/communication/communicationfactory.hpp"
+#include <queue>
 namespace uavmodel {
 double CommunicationSystem::v_fre = 0.0;
+
+struct DelayResult {
+    double delay;          // 最短时延
+    bool reachable;        // 是否可达
+    std::vector<VID> path; // 完整路径（src -> ... -> dst）
+};
+
+struct IndexEntry {
+    int tno;
+    int rno;
+    double time_delay;
+    IndexEntry(int a, int b, double c) : tno(a), rno(b), time_delay(c) {}
+};
+
+class CommunicationAnalyzer {
+  public:
+    using VID = int;
+    using AdjList = std::map<VID, std::vector<std::pair<VID, double>>>;
+    AdjList adj;
+
+    // 20250820 hx 中继节点的转发时延获取transfer_delay
+    // 暂时为一个car.xml文件中trandelay，后续由话题发布加入optcommMemory
+    void buildGraph(const OptCommMemory& commu) {
+        adj.clear();
+        for (const auto& [src, targets] : commu) {
+            for (const auto& [dst, state_data] : targets) {
+                const auto& [state] = state_data;
+                if (state.success && src != dst) { // 排除自身到自身的边
+                    adj[src].emplace_back(dst, state.time_delay);
+                }
+            }
+        }
+    }
+
+    // 计算最短路径并返回包含路径的结果
+    std::map<VID, DelayResult> calculateDelays(VID src, Components& c, CommunicationData& bestcomm) {
+        std::map<VID, double> dist; // 最短时延
+        std::map<VID, VID> prev;    // 前驱节点（用于回溯路径）
+        std::priority_queue<std::pair<double, VID>, std::vector<std::pair<double, VID>>, std::greater<>> pq;
+        auto& optresult = c.getSpecificSingleton<OptCommResult>().value();
+        double transfer_delay = bestcomm.transdelay;
+        // 初始化：所有节点时延设为无穷大，前驱设为-1（无效值）
+        for (const auto& [node, _] : adj) {
+            dist[node] = std::numeric_limits<double>::infinity();
+            prev[node] = -1; // 标记无前驱
+        }
+        dist[src] = 0.0;
+        pq.emplace(0.0, src);
+
+        // Dijkstra算法核心：更新最短时延和前驱节点
+        // 20250820 hx 增加中继转发时延
+        while (!pq.empty()) {
+            auto [current_dist, u] = pq.top();
+            pq.pop();
+
+            if (current_dist > dist[u])
+                continue; // 跳过非最优路径
+            if (!adj.count(u))
+                continue; // 无出边，跳过
+
+            for (const auto& [v, comm_delay] : adj.at(u)) {
+                double total_delay = comm_delay;
+                if (u != src) {
+                    total_delay += transfer_delay; // 增加转发时延
+                }
+
+                if (dist[v] > dist[u] + total_delay) {
+                    dist[v] = dist[u] + total_delay;
+                    prev[v] = u; // 记录v的前驱为u
+                    pq.emplace(dist[v], v);
+                }
+            }
+        }
+
+        // 构建结果：计算每个节点的可达性、最短路径
+        std::map<VID, DelayResult> result;
+        for (const auto& [node, d] : dist) {
+            DelayResult dr;
+            dr.delay = d;
+            dr.reachable = (d < std::numeric_limits<double>::infinity());
+            dr.path.clear();
+
+            // 回溯路径：从node反向找到src，再反转得到正序
+            if (dr.reachable) {
+                VID curr = node;
+                while (curr != -1) { // 直到前驱为-1（src的前驱是-1）
+                    dr.path.push_back(curr);
+                    if (curr == src)
+                        break; // 到达源节点则终止
+                    curr = prev[curr];
+                }
+                std::reverse(dr.path.begin(), dr.path.end()); // 反转：src->...->node
+            }
+
+            result[node] = dr;
+            optresult[src][node] = std::make_tuple(d, dr.reachable, dr.path);
+        }
+        return result;
+    }
+};
+
+
 void CommunicationSystem::tick(double dt, Components& c) {
     // 计算两两之间的通信结果并存储到CommunicaionMemory中;（能否通信，其它参数如误码率、时延等）
     // auto& commu = c.getSpecificSingleton<CommunicaionMemory>().value();
@@ -15,6 +118,10 @@ void CommunicationSystem::tick(double dt, Components& c) {
     auto& memsysscan = c.getSpecificSingleton<uavmodel::SystemScannedMemory>(); // 最终态势融合结果存储
     CommunicationData bestComm;
     double tmpdalay = 99;
+    double set_Pt = 0;
+    auto& optcomm = c.getSpecificSingleton<OptCommMemory>().value();
+    auto&& myvid = c.getSpecificSingleton<VID>().value();
+
     for (auto&& [id, _commdata, _damage] : c.getNormal<CommunicationData, DamageModel>()) {
         if (_damage.damageLevel == DAMAGE_LEVEL::K || _damage.damageLevel == DAMAGE_LEVEL::KK) {
             continue;
@@ -24,6 +131,7 @@ void CommunicationSystem::tick(double dt, Components& c) {
             bestComm = _commdata;
             tmpdalay = _commdata.launchdelay + _commdata.receivedelay + _commdata.transdelay;
         }
+        set_Pt = _commdata.transpower;
     }
     CommuState commstate;
     commstate.time_delay = INFINITY;
@@ -59,37 +167,29 @@ void CommunicationSystem::tick(double dt, Components& c) {
             // commstate.time_delay = 10.0;
             // commstate.rate_error = 0.0;
             if (vid == c.getSpecificSingleton<VID>().value()) {
+                get<0>(optcomm[myvid][vid]).time_delay = 999;
+                get<0>(optcomm[myvid][vid]).success = false;
+                get<0>(optcomm[myvid][vid]).rate_error = INFINITY;
             } else {
                 double SNR = calculateSNR(myPos, otherPos);
                 // 2.计算误码率0~1，判断是否成功通信
                 commstate.rate_error = 0.5 * erfc(sqrt(SNR));
-
                 commstate.success = (commstate.rate_error < 1e-5);
+
+                                // 20250816 hx
+                get<0>(optcomm[myvid][vid]).success = commstate.success;
+                get<0>(optcomm[myvid][vid]).rate_error = commstate.rate_error;
+                // 互相通信
+                get<0>(optcomm[vid][myvid]).success = commstate.success;
+                get<0>(optcomm[vid][myvid]).rate_error = commstate.rate_error;
+
                 if (commstate.success) {
+                    // 20250815 hx 修改时延 ：两两时延 传播时延+发射时延+接收时延（各个设备不同car.xml配置）
                     double distance = (myPos - otherPos).norm();
-                    commstate.time_delay =
-                        distance / c_speed + bestComm.launchdelay + bestComm.receivedelay;
+                    commstate.time_delay = distance / c_speed + bestComm.launchdelay + bestComm.receivedelay;
+                    get<0>(optcomm[myvid][vid]).time_delay = commstate.time_delay;
+                    get<0>(optcomm[vid][myvid]).time_delay = commstate.time_delay;
                 }
-                // 3.如果不能直接通信，则遍历查找无人机中继节点,选择能通信的中继节点且综合时延最小的；
-                // if (commstate.success == false) {
-                //    for (int i = 0; i < uavid.size(); i++) {
-                //        uavmodel::Vector3 uavPos = get<1>((*memit)[uavid[i]]).position;
-                //        /*计算节点能否分别和本车以及目标车通信*/
-                //        double rate_error1 = 0.5 * erfc(sqrt(calculateSNR(myPos, uavPos)));
-                //        double rate_error2 = 0.5 * erfc(sqrt(calculateSNR(otherPos, uavPos)));
-                //        bool success1 = rate_error1 < 1e-5;
-                //        bool success2 = rate_error2 < 1e-5;
-                //        if (success1 && success2) {
-                //            // 时延融合，误码率融合
-                //            commstate.success = true;
-                //            double newdelay = (myPos - uavPos).norm() / c_speed + (otherPos - uavPos).norm() /
-                //            c_speed; if (newdelay < commstate.time_delay) {
-                //                commstate.time_delay = newdelay;
-                //                commstate.rate_error = 1 - (1 - rate_error1) * (1 - rate_error2);
-                //            }
-                //        }
-                //    }
-                //}
             }
             commmemory[vid] = commstate; // vid为通信目标车辆的VID，CommuState为与此目标的通信状态
             // 根据通信结果计算态势融合结果
@@ -112,6 +212,29 @@ void CommunicationSystem::tick(double dt, Components& c) {
         }
     }
     // TODO: 1.目前的中继通过找无人机一层中继实现；2.态势融合直接使用时延最小的，没有考虑误码或者各传感器的探测精度；
+
+    // 20250815 hx 中继通信功能实现 ScannedMemory中不包含自己
+    CommunicationAnalyzer analyzer;
+    //  根据时延排序
+    std::vector<IndexEntry> entries;
+    for (auto&& [vid, entityInfo] : c.getSpecificSingleton<ScannedMemory>().value()) {
+        // std::cout << vid;
+        if (vid == myvid) {
+            continue;
+        } else {
+            auto&& vid_comm = (*(c.getSpecificSingleton<SystemScannedMemoryget>()))[vid];
+            for (auto&& [targetid, delaytime] : vid_comm) {
+                get<0>(optcomm[vid][targetid]).time_delay = get<0>(delaytime);
+                get<0>(optcomm[vid][targetid]).success = (get<0>(delaytime) < 999);
+            }
+        }
+    }
+    analyzer.buildGraph(optcomm); // 构建通信拓扑（仅含直接成功的边）
+
+    // 20250820 hx 遍历所有源节点，分析并打印链路
+    for (const auto& [src, _] : analyzer.adj) {
+        auto delays = analyzer.calculateDelays(src, c, bestComm); // 获取源节点到所有节点的路径信息
+    }
 }
 // 计算绕射常数
 } // namespace uavmodel
