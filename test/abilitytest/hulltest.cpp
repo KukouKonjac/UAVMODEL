@@ -32,7 +32,7 @@ int main() {
     const std::string base_path = "D:/GitHubProject/UAVMODEL/test/abilitytest/pythonProject/";
 
     bool Out_of_Range_Mark = false;
-    int testmode = 3;
+    int testmode = 1;
     double flag = false;
     if (testmode == 0) {
         for (int i = 0; i < 2000; i++) {
@@ -66,27 +66,28 @@ int main() {
         motionParam.BATTERY = 0;
         double max_charge_time = 0;
         while (motionParam.BATTERY < motionParam.MAX_FLY_TIME) {
-            cout << "正在充电，当前电量 = " << motionParam.BATTERY / 60 << "min" << endl;
+            cout << "正在充电，当前电量 = " << motionParam.BATTERY / motionParam.MAX_FLY_TIME *100 << "%" << endl;
             max_charge_time += 0.05;
             model.tick(0.05);
             if ((motionParam.BATTERY == motionParam.MAX_FLY_TIME)) {
                 cout << "充电完成，总耗时 = " << max_charge_time / 60 << "min" << endl;
             }
         }
-        buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(1), any(tuple<double, double>(8000, true)));
-        model.tick(0.05);
+        buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(1), any(tuple<double, double>(800, true)));
         auto& coordinate = model.components.getSpecificSingleton<uavmodel::Coordinate>().value().position;
         // 模拟飞行过程，循环执行3000次tick
         for (int i = 1; i <= 360000; ++i) {
             buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(3), any(tuple<double, double>(200, 0)));
-            auto& velocity = model.components.getSpecificSingleton<uavmodel::Hull>().value().velocity;
+            auto& velocity = model.components.getSpecificSingleton<uavmodel::Hull>().value().velocity.x;
             // 输出信息
-            if (max_levelfly_speed < velocity.norm()) {
-                cout << "已充满电   当前速度:  " << velocity.norm() / 3.6 << "km/h" << endl;
+            if (max_levelfly_speed < velocity || !max_levelfly_speed) {
+                cout << "已充满电   当前速度:  " << velocity  << " " <<max_levelfly_speed<< "km/h" << endl;
+                max_levelfly_speed = max(max_levelfly_speed, velocity);
             } else {
+                max_levelfly_speed = max(max_levelfly_speed, velocity);
+                cout << "最大巡航速度： " << max_levelfly_speed << endl;
                 break;
             }
-            max_levelfly_speed = max(max_levelfly_speed, velocity.norm());
             model.tick(0.05);
         }
     } else if (testmode == 2) {

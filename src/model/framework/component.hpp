@@ -298,6 +298,7 @@ inline QuadrotorMotionParamList componentDeserialize<QuadrotorMotionParamList>(r
     tmp.MAX_DIVE_SPEED = componentDeserialize<double>(node->first_node("MAX_DIVE_SPEED"));
     tmp.MAX_LEVELFLY_SPEED = componentDeserialize<double>(node->first_node("MAX_LEVELFLY_SPEED"));
     tmp.MAX_FLY_TIME = componentDeserialize<double>(node->first_node("MAX_FLY_TIME"));
+    tmp.CHARGING_EFFICIENTY = componentDeserialize<double>(node->first_node("CHARGING_EFFICIENTY"));
     tmp.ROTATE_SPEED = componentDeserialize<double>(node->first_node("ROTATE_SPEED"));
     tmp.LENGTH_D = componentDeserialize<double>(node->first_node("LENGTH_D"));
     tmp.F_MAX = componentDeserialize<double>(node->first_node("F_MAX"));
