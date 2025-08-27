@@ -466,6 +466,8 @@ struct SurroundState {
     double secondRevolutionAngleTraversed = 0.0; // 第二圈累计角度
 
     double lastAngle = 0.0; // 上次角度，用于差值计算
+    int completedCircles = 1;     // ✅ 新增：已完成的外圈数
+    double lastRadialError = 0.0; // ✅ 新增：用于 PD 控制的微分项
 };
 
 using Components = ComponentManager<

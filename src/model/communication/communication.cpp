@@ -187,6 +187,8 @@ void CommunicationSystem::tick(double dt, Components& c) {
                     // 20250815 hx 修改时延 ：两两时延 传播时延+发射时延+接收时延（各个设备不同car.xml配置）
                     double distance = (myPos - otherPos).norm();
                     commstate.time_delay = distance / c_speed + bestComm.launchdelay + bestComm.receivedelay;
+                    std::cout << distance / c_speed << " " << bestComm.launchdelay << " " << bestComm.receivedelay
+                              << std::endl;
                     get<0>(optcomm[myvid][vid]).time_delay = commstate.time_delay;
                     get<0>(optcomm[vid][myvid]).time_delay = commstate.time_delay;
                 }

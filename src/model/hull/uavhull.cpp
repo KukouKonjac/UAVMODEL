@@ -86,17 +86,6 @@ void HullSystem::tick(double dt, Components& c) {
         } else if (k == COMMAND_TYPE::BACK) {
             auto& tar_pos = std::get<1>(c.getSpecificSingleton<SystemScannedMemory>().value()[param1]).position;
             auto& tar_vel = std::get<1>(c.getSpecificSingleton<SystemScannedMemory>().value()[param1]).velocity;
-            // if (abs(tar.z - coordinate.position.z) < 1) {
-            //     flyflag = false;
-            //     continue;
-            // }
-            // double dis = sqrt(pow((c.getSpecificSingleton<Coordinate>().value().position.x - tar.x), 2) +
-            // pow((c.getSpecificSingleton<Coordinate>().value().position.y - tar.y), 2)); speed = dis > 200 ? /*20 :
-            // floor(dis / 20)*/ speed : floor(dis / 20); speed = speed < 0 ? 0 : speed; if (speed == 0) {
-            //     height = -1 * tar.z;
-            // }
-            // direction = atan2(tar.y - c.getSpecificSingleton<Coordinate>().value().position.y,
-            //                   tar.x - c.getSpecificSingleton<Coordinate>().value().position.x);
 
             const double target_x = tar_pos.x;
             const double target_y = tar_pos.y;
@@ -110,8 +99,32 @@ void HullSystem::tick(double dt, Components& c) {
 
             double horizontal_dist = std::sqrt(dx * dx + dy * dy);
 
-            double desired_vx = tar_vel.x + 1.0 * dx; // P 控制：位置误差 → 附加速度
-            double desired_vy = tar_vel.y + 1.0 * dy;
+            const double Kp = 0.5;
+            const double Ki = 0.0;
+            const double Kd = 0.8;
+            static double integral_x = 0.0;
+            static double prev_error_x = 0.0;
+            static double integral_y = 0.0;
+            static double prev_error_y = 0.0;
+
+
+            // =============================
+            // X 方向 PID
+            // =============================
+            integral_x += dx * dt;
+            integral_x = std::clamp(integral_x, -1.0, 1.0); // 积分限幅
+            double derivative_x = (dx - prev_error_x) / dt;
+            double desired_vx = tar_vel.x + Kp * dx + Ki * integral_x + Kd * derivative_x;
+            prev_error_x = dx;
+
+            // =============================
+            // Y 方向 PID
+            // =============================
+            integral_y += dy * dt;
+            integral_y = std::clamp(integral_y, -1.0, 1.0); // 积分限幅
+            double derivative_y = (dy - prev_error_y) / dt;
+            double desired_vy = tar_vel.y + Kp * dy + Ki * integral_y + Kd * derivative_y;
+            prev_error_y = dy;
 
             // 限制最大速度
             double max_speed = optParam.value().MAX_LEVELFLY_SPEED;
@@ -155,7 +168,6 @@ void HullSystem::tick(double dt, Components& c) {
                 state.centerPosition.x = cur_pos.x + param1 * std::cos(param2);
                 state.centerPosition.y = cur_pos.y + param1 * std::sin(param2);
                 state.centerPosition.z = cur_pos.z;
-                std::cout << state.centerPosition.x << endl;
 
                 // 初始化角度（从当前位置指向圆心）
                 const double dx = cur_pos.x - state.centerPosition.x;
@@ -206,7 +218,7 @@ void HullSystem::tick(double dt, Components& c) {
                 if (std::abs(radial_error) > 1.0) {
                     // PD-like 控制进入小轨道
                     radial_velocity = 0.8 * radial_error;                                 // 比例控制
-                    radial_velocity = std::clamp(radial_velocity, -speed / 2, speed / 2); // 限制速度
+                    //radial_velocity = std::clamp(radial_velocity, -speed, speed); // 限制速度
                 }
 
                 // 目标切向速度
@@ -220,7 +232,6 @@ void HullSystem::tick(double dt, Components& c) {
                 double vx = radial_velocity * std::cos(dir_radial) + speed * std::cos(dir_tangent);
                 double vy = radial_velocity * std::sin(dir_radial) + speed * std::sin(dir_tangent);
                 direction = std::atan2(vy, vx);
-                std::cout << radial_velocity << " " << direction << endl;
 
                 // 前馈加速对齐
                 double current_speed_mag =
@@ -230,37 +241,59 @@ void HullSystem::tick(double dt, Components& c) {
                     direction += (1.0 - speed_ratio) * 0.15;
                 }
             } else {
-                // ===== 第二阶段：扩展到 finalRadius 并飞外圈一圈 =====
+                // ===== 第二阶段：持续螺旋扩展，每圈外扩 500m =====
 
-                // 扩展径向速度（Sigmoid）
+                const double R_INCREMENT = 500.0;            // 每圈外扩 500 米
+                const double TARGET_RADIUS_TOLERANCE = 30.0; // 接近目标半径的判定阈值
+
+                // 动态更新目标半径：基于已环绕的圈数
+                double target_radius = R_SMALL + R_INCREMENT * state.completedCircles;
+
+                // 判断是否已经进入当前圈的目标轨道（用于角度累计）
+                bool inTargetOrbit = (std::abs(current_radius - target_radius) < TARGET_RADIUS_TOLERANCE);
+
+                // 扩展径向速度：向当前目标半径靠近
                 double radial_velocity = 0.0;
-                double radial_error = finalRadius - current_radius;
+                double radial_error = target_radius - current_radius;
 
-                if (current_radius < finalRadius && radial_error > 0.01) {
-                    double e_norm = radial_error / finalRadius;
-                    double sigmoid = 1.0 / (1.0 + std::exp(-6.0 * (e_norm - 0.25)));
-                    radial_velocity = EXPAND_RATE * sigmoid;
+                if (std::abs(radial_error) > 1.0) {
+                    // 使用 PD 控制或限幅比例控制
+                    double kp = 0.5;
+                    double kd = 0.5;
+                    double d_radial_error = radial_error - state.lastRadialError;
+                    double dt = 1.0 / 50.0; // 假设 50Hz 控制频率，可根据实际调整
+                    double derivative = d_radial_error / dt;
+
+                    radial_velocity = kp * radial_error + kd * derivative;
+                    radial_velocity = std::clamp(radial_velocity, -speed, speed);
                 }
 
-                // 外圈切向速度
+                // 切向速度：保持恒定角速度 omega
                 double target_speed = omega * current_radius;
                 speed = std::min(target_speed, params.MAX_LEVELFLY_SPEED);
 
                 // 合成方向
-                double dir_radial = angle;
-                double dir_tangent = angle + M_PI_2;
+                double dir_radial = angle;           // 径向朝外
+                double dir_tangent = angle + M_PI_2; // 切向（逆时针）
 
                 double vx = radial_velocity * std::cos(dir_radial) + speed * std::cos(dir_tangent);
                 double vy = radial_velocity * std::sin(dir_radial) + speed * std::sin(dir_tangent);
                 direction = std::atan2(vy, vx);
 
-                // 累计外圈角度（仅在接近 finalRadius 时）
-                if (!state.hasCompletedSecondRevolution && current_radius >= finalRadius * 0.98) {
+                // 累计角度（仅在接近当前目标半径时才累计，防止误判）
+                if (inTargetOrbit) {
                     state.secondRevolutionAngleTraversed += std::abs(angle_diff);
-                    if (state.secondRevolutionAngleTraversed >= 2 * M_PI) {
-                        state.hasCompletedSecondRevolution = true;
-                    }
                 }
+
+                // 检查是否完成一圈（360°）
+                if (state.secondRevolutionAngleTraversed >= 2 * M_PI) {
+                    state.completedCircles++;                   // 圈数 +1
+                    state.secondRevolutionAngleTraversed = 0.0; // 重置角度累计
+                    // 下一圈的目标半径自动增加 R_INCREMENT
+                }
+
+                // 更新 lastRadialError 用于微分项
+                state.lastRadialError = radial_error;
             }
 
             height = -cur_pos.z;
@@ -271,6 +304,9 @@ void HullSystem::tick(double dt, Components& c) {
             param.MAX_CONTROL_RANGE) {
             c.getSpecificSingleton<Hull>().value().out_of_range = true;
             speed = 0;
+        }
+        else {
+            c.getSpecificSingleton<Hull>().value().out_of_range = false;
         }
         QuadrotorMoveSystem::tickspecific(dt, c.getSpecificSingleton<Coordinate>().value(),
                                           c.getSpecificSingleton<Hull>().value(), direction, speed, height, param);

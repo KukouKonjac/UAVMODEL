@@ -224,7 +224,7 @@ void QuadrotorMoveSystem::tickspecific(double dt, Coordinate& baseCoordinate, Hu
     double g = 9.8;
     double psi_ref = expectYaw;
     uavmodel::Vector3 temp_rotation = Quaternion::fromCompressedQuaternion(baseCoordinate.attitude).getEuler();
-    const double MAX_LINEAR_ACC = 10;                                     // 最大线加速度(m/s²)
+    const double MAX_LINEAR_ACC = 20;                                     // 最大线加速度(m/s²)
     uavmodel::Vector3 v_ref_direction(cos(expectYaw), sin(expectYaw), 0); // 期望方向
     // v_ref_direction.normalize();
     uavmodel::Vector3 v_ref = v_ref_direction * std::min(expectSpeed, params.MAX_LEVELFLY_SPEED);

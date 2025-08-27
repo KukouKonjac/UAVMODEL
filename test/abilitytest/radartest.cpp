@@ -12,7 +12,7 @@ std::ostream& operator<<(std::ostream& o, const EntityInfo& e) {
 int main() {
     using namespace std;
     // 测试模式，0为侦察高度（范围），1为识别目标距离或激光测距范围，2为目标定位精度或激光测距精度
-    int testmode = 0;
+    int testmode = 2;
     uavmodel::UavModel model;
     buildBaseModel("D:\\cqmodel\\rule_framework\\car.xml", model);
     // buildBaseModel("D:\\zgy2025\\uavtestxml\\uavsensor.xml", model);

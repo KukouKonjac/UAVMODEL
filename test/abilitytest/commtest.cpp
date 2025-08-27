@@ -24,7 +24,7 @@ int main() {
         buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(3), any(tuple<double, double>(200, 0)));
         get<1>((*(model.components.getSpecificSingleton<uavmodel::ScannedMemory>()))[1]) =
             // EntityInfo{.position = {1000, 0, 0},
-            EntityInfo{.position = {5000, 0, 0},
+            EntityInfo{.position = {10000, 0, 0},
                        .velocity = {0, 0, 0},
                        .baseInfo = {BaseInfo::ENTITY_TYPE::CAR, 1, 1, DAMAGE_LEVEL::N, 0, 1, 0, 3000.0, 1}};
         double min_height = 0;
@@ -49,7 +49,7 @@ int main() {
                           << "  Time Delay = " << tmp.time_delay << endl;
             }
             get<1>((*(model.components.getSpecificSingleton<uavmodel::ScannedMemory>()))[1]) =
-                EntityInfo{.position = {5000, 0, 0},
+                EntityInfo{.position = {10000, 0, 0},
                            .velocity = {0, 0, 0},
                            .baseInfo = {BaseInfo::ENTITY_TYPE::CAR, 1, 1, DAMAGE_LEVEL::N, 0, 1, 0, 3000.0, 1}};
         }
@@ -61,12 +61,11 @@ int main() {
         buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(1), any(tuple<double, double>(0, true)));
         buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(3), any(tuple<double, double>(20, 0)));
         // 初始化距离参数
-        double launch_time = 0.5;
-        double receive_time = 0.5;
+        double launch_time = 0.005;
+        double receive_time = 0.005;
         double transmit_time_4km = 0.000013;
         double transmit_time_5km = 0.000016;
         double transmit_time_6km = 0.000021;
-        double transfer_time = 0.3;
 
         // 0车的ScannedMemory通信车辆位置
         get<1>((*(model.components.getSpecificSingleton<uavmodel::ScannedMemory>()))[1]) =
