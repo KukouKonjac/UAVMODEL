@@ -16,9 +16,10 @@ class HullSystem : public System {
     double height = 0;
     double speed = 0;
     double direction = 0;
-    bool flyflag = 0;
+    bool flyflag = false;
     Vector3 ReleasePosition = {0, 0, 0};
     bool full_charged = false;
+    uavmodel::VID tmp = -1;
 };
 
 } // namespace uavmodel

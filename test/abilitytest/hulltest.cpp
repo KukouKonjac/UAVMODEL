@@ -29,10 +29,11 @@ int main() {
 
     // 写入文件
     std::vector<std::pair<double, double>> trajectory;
+    std::vector<std::pair<double, double>> target_trajectory; // 支援车（目标）轨迹
     const std::string base_path = "D:/GitHubProject/UAVMODEL/test/abilitytest/pythonProject/";
 
     bool Out_of_Range_Mark = false;
-    int testmode = 5;
+    int testmode = 4;
     double flag = false;
     if (testmode == 0) {
         for (int i = 0; i < 6000; i++) {
@@ -151,7 +152,7 @@ int main() {
     } else if (testmode == 4) {
         get<1>((*(model.components.getSpecificSingleton<uavmodel::SystemScannedMemory>()))[2]) =
             // EntityInfo{.position = {1000, 0, 0},
-            EntityInfo{.position = {100, 0, 0},
+            EntityInfo{.position = {100, 0, -999},
                        .velocity = {60, 10, 0},
                        .baseInfo = {BaseInfo::ENTITY_TYPE::SUPPORTCAR, 1, 1, DAMAGE_LEVEL::N, 0, 1, 0, 3000.0, 1}};
         model.components.getSpecificSingleton<Coordinate>().value().position = {0, 0, 0};
@@ -161,7 +162,7 @@ int main() {
         auto& cur_vel = model.components.getSpecificSingleton<Hull>().value().velocity;
         auto& tar_pos = get<1>((*(model.components.getSpecificSingleton<uavmodel::SystemScannedMemory>()))[2]).position;
         auto& tar_vel = get<1>((*(model.components.getSpecificSingleton<uavmodel::SystemScannedMemory>()))[2]).velocity;
-        buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(0), any(tuple<double, double>(true, true)));
+        buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(4), any(tuple<double, double>(true, true)));
         model.tick(0.05);
         buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(1), any(tuple<double, double>(200, true)));
         while (-cur_pos.z < 199) {
@@ -169,11 +170,13 @@ int main() {
             tar_pos.y += 0.05 * 10;
             model.tick(0.05);
             trajectory.emplace_back(cur_pos.x, cur_pos.y);
+            target_trajectory.emplace_back(tar_pos.x, tar_pos.y);
         }
         for (int i = 0; i < 1000; i++) {
             buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(3), any(tuple<double, double>(200, -1)));
             model.tick(0.05);
             trajectory.emplace_back(cur_pos.x, cur_pos.y);
+            target_trajectory.emplace_back(tar_pos.x, tar_pos.y);
         }
         cout << "成功起飞， 战车速度为： " << tar_vel.norm() << endl;
         double time_take = 0;
@@ -181,10 +184,11 @@ int main() {
             buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(5), any(tuple<double, double>(2, true)));
             tar_pos.x += 0.05 * 60;
             tar_pos.y += 0.05 * 10;
-            cout << "UAV与ZY战车距离" << (cur_pos - tar_pos).norm() << "m, 降落所用时间 =" << time_take << endl;
+            cout << "UAV与ZY战车距离" << (cur_pos - tar_pos).norm() << "m, 降落所用时间 =" << cur_pos << endl;
             model.tick(0.05);
             time_take += 0.05;
             trajectory.emplace_back(cur_pos.x, cur_pos.y);
+            target_trajectory.emplace_back(tar_pos.x, tar_pos.y);
             
         }
         cout << "成功降落，战车速度为： " << tar_vel.norm() << endl;
@@ -192,80 +196,67 @@ int main() {
     } else if (testmode == 5) {
         get<1>((*(model.components.getSpecificSingleton<uavmodel::SystemScannedMemory>()))[1]) =
             // EntityInfo{.position = {1000, 0, 0},
-            EntityInfo{.position = {100, 0, 0},
-                       .velocity = {60, 10, 0},
+            EntityInfo{.position = {100, 0, 999},
+                       .velocity = {0, 0, 0},
                        .baseInfo = {BaseInfo::ENTITY_TYPE::SUPPORTCAR, 1, 1, DAMAGE_LEVEL::N, 0, 1, 0, 3000.0, 1}};
         model.components.getSpecificSingleton<Coordinate>().value().position = {0, 0, 0};
         model.components.getSpecificSingleton<uavmodel::SID>() = 1;
         model.components.getSpecificSingleton<uavmodel::PLATOONID>() = 1;
         auto& cur_pos = model.components.getSpecificSingleton<Coordinate>().value().position;
+        cur_pos.z = 999;
         auto& cur_vel = model.components.getSpecificSingleton<Hull>().value().velocity;
         auto& tar_pos = get<1>((*(model.components.getSpecificSingleton<uavmodel::SystemScannedMemory>()))[1]).position;
         auto& tar_vel = get<1>((*(model.components.getSpecificSingleton<uavmodel::SystemScannedMemory>()))[1]).velocity;
         cur_vel = {180, 0, 0};
         buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(0), any(tuple<double, double>(true, true)));
         model.tick(0.05);
-        buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(1), any(tuple<double, double>(200, true)));
-        while (-cur_pos.z < 199) {
-            tar_pos.x += 0.05 * 60;
-            tar_pos.y += 0.05 * 10;
-            model.tick(0.05);
-            trajectory.emplace_back(cur_pos.x, cur_pos.y);
-        }
-        trajectory.emplace_back(cur_pos.x, cur_pos.y);
+        buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(1), any(tuple<double, double>(30000, true)));
+        double time_take = 0;
+        //while (-cur_pos.z < 2999) {
+        //    /*tar_pos.x += 0.05 * 60;
+        //    tar_pos.y += 0.05 * 10;*/
+        //    model.tick(0.05);
+        //    time_take += 0.05;
+        //    trajectory.emplace_back(time_take, -cur_pos.z);
+        //}
         // 模拟飞行过程，循环执行3000次tick
         for (int i = 1; i <= 10000; ++i) {
             buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(6), any(tuple<double, double>(5000, 0)));
             model.tick(0.05);
             auto& state = model.components.getSpecificSingleton<uavmodel::SurroundState>().value();
-            trajectory.emplace_back(cur_pos.x, cur_pos.y);
-            cout << "当前速度 = " << cur_vel.norm() << endl;
-            if (cur_vel.norm() > 180) {
-                break;
-            }
-            
-        }
-     
-        double time_take = 0;
-        while (cur_vel.x!=tar_vel.x) {
-            buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(5), any(tuple<double, double>(1, true)));
-            
-            tar_pos.x += 0.05 * 60;
-            tar_pos.y += 0.05 * 10;
-            cout << "UAV与ZY战车距离" << (cur_pos - tar_pos).norm() << "m" << cur_pos << endl;
-            model.tick(0.05);
             time_take += 0.05;
             trajectory.emplace_back(cur_pos.x, cur_pos.y);
-            
+            cout << "当前速度 = " << cur_vel.norm() << endl;
         }
-        cout << time_take << endl;
+     
+
+        //while (cur_vel.x != tar_vel.x) {
+        //    buffer.emplace(static_cast<uavmodel::command::COMMAND_TYPE>(5), any(tuple<double, double>(1, true)));
+        //    
+        //    /*tar_pos.x += 0.05 * 60;
+        //    tar_pos.y += 0.05 * 10;*/
+        //    cout << "UAV与ZY战车距离" << (cur_pos - tar_pos).norm() << "m" << cur_pos << endl;
+        //    model.tick(0.05);
+        //    time_take += 0.05;
+        //    trajectory.emplace_back(cur_pos.x, cur_pos.y);
+        //    
+        //}
+        //cout << time_take << endl;
     }
     std::ofstream file(base_path + "trajectory.csv");
     if (file.is_open()) {
-        file << "x,y\n"; // CSV 头
+        file << "x,y,type\n"; // CSV 头
         for (const auto& point : trajectory) {
-            file << point.first << "," << point.second << "\n";
+            file << point.first << "," << point.second << ",uav\n";
+        }
+        // 写入支援车轨迹
+        for (const auto& point : target_trajectory) {
+            file << point.first << "," << point.second << ",target\n";
         }
         file.close();
         std::cout << "✅ 轨迹已保存到: " << base_path << "trajectory.csv" << std::endl;
     } else {
         std::cerr << "❌ 无法创建 trajectory.csv！路径可能错误或无权限: " << base_path << std::endl;
-    }
-
-    // === 🟢 写入参考圆（理想轨道）===
-    std::ofstream ref_file(base_path + "circle_ref.csv");
-    if (ref_file.is_open()) {
-        ref_file << "cx,cy\n";
-        for (int i = 0; i <= 360; ++i) {
-            double theta = i * M_PI / 180.0;
-            double x = 3000.0 + 3000.0 * std::cos(theta);
-            double y = 0.0 + 3000.0 * std::sin(theta);
-            ref_file << x << "," << y << "\n";
-        }
-        ref_file.close();
-        std::cout << "✅ 参考圆已保存到: " << base_path << "circle_ref.csv" << std::endl;
-    } else {
-        std::cerr << "❌ 无法创建 circle_ref.csv！路径可能错误或无权限: " << base_path << std::endl;
     }
 
     return 0;

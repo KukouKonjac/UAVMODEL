@@ -224,7 +224,7 @@ void QuadrotorMoveSystem::tickspecific(double dt, Coordinate& baseCoordinate, Hu
     double g = 9.8;
     double psi_ref = expectYaw;
     uavmodel::Vector3 temp_rotation = Quaternion::fromCompressedQuaternion(baseCoordinate.attitude).getEuler();
-    const double MAX_LINEAR_ACC = 20;                                     // 最大线加速度(m/s²)
+    const double MAX_LINEAR_ACC = 25;                                     // 最大线加速度(m/s²)
     uavmodel::Vector3 v_ref_direction(cos(expectYaw), sin(expectYaw), 0); // 期望方向
     // v_ref_direction.normalize();
     uavmodel::Vector3 v_ref = v_ref_direction * std::min(expectSpeed, params.MAX_LEVELFLY_SPEED);
@@ -283,6 +283,8 @@ void QuadrotorMoveSystem::tickspecific(double dt, Coordinate& baseCoordinate, Hu
         clamp((phi_ref - temp_rotation.x) / dt, -params.ROTATE_SPEED, params.ROTATE_SPEED),
         clamp((theta_ref - temp_rotation.y) / dt, -params.ROTATE_SPEED, params.ROTATE_SPEED),
         clamp((psi_ref - temp_rotation.z) / dt, -params.ROTATE_SPEED, params.ROTATE_SPEED)};
+
+
     // 3. 直接更新状态（简化动力学）
     // 超出最大飞行时间时失去控制
     if (params.BATTERY >= 0) {

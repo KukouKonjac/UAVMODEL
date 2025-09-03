@@ -122,7 +122,7 @@ bool UAVModel::Tick(double time) {
 
     buffer->emplace("EntityInfoOut", info.ToValueMap());
     Location tmpl = positionTrans(location, info.position);
-    double energyremain = model.components.getSpecificSingleton<uavmodel::QuadrotorMotionParamList>()->MAX_FLY_TIME;
+    double energyremain = model.components.getSpecificSingleton<uavmodel::QuadrotorMotionParamList>()->BATTERY;
     // deg
     buffer->emplace("longitude", tmpl.longitude);
     buffer->emplace("altitude", tmpl.altitude);

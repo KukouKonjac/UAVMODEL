@@ -310,8 +310,7 @@ inline QuadrotorMotionParamList componentDeserialize<QuadrotorMotionParamList>(r
     tmp.JYY = componentDeserialize<double>(node->first_node("JYY"));
     tmp.JZZ = componentDeserialize<double>(node->first_node("JZZ"));
     tmp.M = componentDeserialize<double>(node->first_node("M"));
-    tmp.MAX_CLIMB_HEIGHT = componentDeserialize<double>(node->first_node("MAX_CLIMB_HEIGHT"));
-    tmp.TIED_WITH_CAR = componentDeserialize<int>(node->first_node("TIED_WITH_CAR"));
+    tmp.MAX_CLIMB_HEIGHT = componentDeserialize<double>(node->first_node("MAX_CLIMB_HEIGHT"));;
     tmp.MAX_CONTROL_RANGE = componentDeserialize<double>(node->first_node("MAX_CONTROL_RANGE"));
     return tmp;
 }

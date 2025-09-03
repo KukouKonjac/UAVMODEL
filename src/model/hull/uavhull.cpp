@@ -47,24 +47,16 @@ void HullSystem::tick(double dt, Components& c) {
     }
 
     auto& memberscan = c.getSpecificSingleton<SystemScannedMemory>().value();
-    for (auto& [k, v] : memberscan) {
-        if (/*get<1>(v).baseInfo.type == uavmodel::BaseInfo::ENTITY_TYPE::SUPPORTCAR &&*/
-            get<1>(v).baseInfo.side == c.getSpecificSingleton<SID>().value() &&
-            c.getSpecificSingleton<PLATOONID>().value() == get<1>(v).baseInfo.platoonid) {
-            optParam.value().TIED_WITH_CAR = k;
-            break;
-        }
-    }
     if (flyflag == false) {
-        if (optParam.value().TIED_WITH_CAR == -1) {
+        if (tmp == -1) {
             ReleasePosition = c.getSpecificSingleton<Coordinate>().value().position;
         } else {
-            ReleasePosition = get<1>(memberscan[optParam.value().TIED_WITH_CAR]).position;
+            ReleasePosition = get<1>(memberscan[tmp]).position;
         }
     } else {
-        if (optParam.value().TIED_WITH_CAR != -1) {
-            ReleasePosition = get<1>(memberscan[optParam.value().TIED_WITH_CAR]).position;
-        }
+        if (tmp != -1) {
+            ReleasePosition = get<1>(memberscan[tmp]).position;
+        } 
     }
 
     auto& param = optParam.value();
@@ -75,10 +67,12 @@ void HullSystem::tick(double dt, Components& c) {
         }
         auto [param1, param2] = any_cast<tuple<double, double>>(v);
         if (k == COMMAND_TYPE::CLIMB || k == COMMAND_TYPE::DIVE) {
+            speed =
+                std::sqrt(c.getSpecificSingleton<Hull>().value().velocity.x * c.getSpecificSingleton<Hull>().value().velocity.x +
+                c.getSpecificSingleton<Hull>().value().velocity.y * c.getSpecificSingleton<Hull>().value().velocity.y);
             height = param1;
             flyflag = true;
         } else if (k == COMMAND_TYPE::LEVELFLIGHT) {
-            height = -c.getSpecificSingleton<Coordinate>().value().position.z;
             speed = param1;
             direction = param2;
         } else if (k == COMMAND_TYPE::HOVER) {
@@ -139,10 +133,10 @@ void HullSystem::tick(double dt, Components& c) {
             direction = std::atan2(desired_vy, desired_vx); // 期望速度方向
 
             height = target_z; // 保持目标高度
-            if (horizontal_dist < 5.0) {
-                height = target_z * (horizontal_dist / 5.0); // 从当前高度缓降到 0
-            }
-            if ((tar_pos - cur_pos).norm() < 1e-2 && (cur_vel - tar_vel).norm() < 1e-2) {
+            //if (horizontal_dist < 5.0) {
+            //    height = target_z * (horizontal_dist / 5.0); // 从当前高度缓降到 0
+            //}
+            if ((tar_pos - cur_pos).norm() < 3 && (cur_vel - tar_vel).norm() < 3) {
                 flyflag = false;
             }
 
@@ -156,7 +150,7 @@ void HullSystem::tick(double dt, Components& c) {
             const double R_MULTIPLIER = 2.0;
             const double finalRadius = R_SMALL * R_MULTIPLIER; // 外圈目标半径
             const double EXPAND_RATE = speed;                  // 扩展速度（m/s），可调整
-            const double omega = 0.1;                          // 角速度 (rad/s)
+            const double omega = 0.15;                          // 角速度 (rad/s)
 
             const double ORBIT_TOLERANCE = 30.0; // 允许误差：±50m
 
@@ -176,8 +170,6 @@ void HullSystem::tick(double dt, Components& c) {
 
                 state.angleTraversed = 0.0;
                 state.secondRevolutionAngleTraversed = 0.0;
-
-                // 不再使用 param1 作为当前半径
             }
 
             // --- 实时几何计算 ---
@@ -296,7 +288,6 @@ void HullSystem::tick(double dt, Components& c) {
                 state.lastRadialError = radial_error;
             }
 
-            height = -cur_pos.z;
         }
     }
     if (flyflag && (full_charged || param.BATTERY == param.MAX_FLY_TIME)) {
@@ -317,9 +308,8 @@ void HullSystem::tick(double dt, Components& c) {
             full_charged = true;
         }
         param.BATTERY = param.BATTERY > param.MAX_FLY_TIME ? param.MAX_FLY_TIME : param.BATTERY;
-        uavmodel::VID tmp = -1;
         for (auto& [k, v] : memberscan) {
-            if (/*get<1>(v).baseInfo.type == uavmodel::BaseInfo::ENTITY_TYPE::SUPPORTCAR &&*/
+            if (get<1>(v).baseInfo.type == uavmodel::BaseInfo::ENTITY_TYPE::SUPPORTCAR &&
                 get<1>(v).baseInfo.side == c.getSpecificSingleton<SID>().value() &&
                 c.getSpecificSingleton<PLATOONID>().value() == get<1>(v).baseInfo.platoonid) {
                 tmp = k;

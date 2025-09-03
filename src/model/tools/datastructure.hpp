@@ -250,7 +250,12 @@ struct SensorData {
     double max_detect_height;
     double laser_mindetectrange;
     double laser_maxdetectrange;
-    static SensorData make() { return SensorData{}; }
+    static SensorData make() {
+        SensorData tmp;
+        tmp.min_detect_height = -1e10;
+        tmp.max_detect_height = 1e10;
+        return tmp;
+    }
 };
 
 // carcommunication
@@ -383,7 +388,6 @@ struct QuadrotorMotionParamList {
                                                  "JZZ",
                                                  "M"
                                                  "MAX_CLIMB_HEIGHT"
-                                                 "TIED_WITH_CAR"
                                                  "MAX_CONTROL_RANGE"};
     // 最大爬升速度
     double MAX_CLIMB_SPEED;
@@ -420,8 +424,6 @@ struct QuadrotorMotionParamList {
     double M;
     // 最大爬升高度
     double MAX_CLIMB_HEIGHT;
-    // 是否绑定车辆
-    VID TIED_WITH_CAR;
     double MAX_CONTROL_RANGE;
     Eigen::Vector4d force;
     Eigen::Vector4d w_rotor;
@@ -435,7 +437,6 @@ struct QuadrotorMotionParamList {
         tmp.M = 0.8;
         tmp.CT = 2.168e-6;
         tmp.CM = 2.136e-8;
-        tmp.TIED_WITH_CAR = 0;
         return tmp;
     }
 };
