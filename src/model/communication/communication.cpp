@@ -85,17 +85,17 @@ class CommunicationAnalyzer {
             dr.reachable = (d < std::numeric_limits<double>::infinity());
             dr.path.clear();
 
-            // 回溯路径：从node反向找到src，再反转得到正序
-            if (dr.reachable) {
-                VID curr = node;
-                while (curr != -1) { // 直到前驱为-1（src的前驱是-1）
-                    dr.path.push_back(curr);
-                    if (curr == src)
-                        break; // 到达源节点则终止
-                    curr = prev[curr];
-                }
-                std::reverse(dr.path.begin(), dr.path.end()); // 反转：src->...->node
-            }
+            //// 回溯路径：从node反向找到src，再反转得到正序
+            //if (dr.reachable) {
+            //    VID curr = node;
+            //    while (curr != -1) { // 直到前驱为-1（src的前驱是-1）
+            //        dr.path.push_back(curr);
+            //        if (curr == src)
+            //            break; // 到达源节点则终止
+            //        curr = prev[curr];
+            //    }
+            //    std::reverse(dr.path.begin(), dr.path.end()); // 反转：src->...->node
+            //}
 
             result[node] = dr;
             optresult[src][node] = std::make_tuple(d, dr.reachable, dr.path);
