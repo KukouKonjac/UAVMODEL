@@ -47,6 +47,14 @@ void HullSystem::tick(double dt, Components& c) {
     }
 
     auto& memberscan = c.getSpecificSingleton<SystemScannedMemory>().value();
+    for (auto& [k, v] : memberscan) {
+        if (get<1>(v).baseInfo.type == uavmodel::BaseInfo::ENTITY_TYPE::SUPPORTCAR &&
+            get<1>(v).baseInfo.side == c.getSpecificSingleton<SID>().value() &&
+            c.getSpecificSingleton<PLATOONID>().value() == get<1>(v).baseInfo.platoonid) {
+            tmp = k;
+            break;
+        }
+    }
     if (flyflag == false) {
         if (tmp == -1) {
             ReleasePosition = c.getSpecificSingleton<Coordinate>().value().position;
@@ -77,13 +85,21 @@ void HullSystem::tick(double dt, Components& c) {
             direction = param2;
         } else if (k == COMMAND_TYPE::HOVER) {
             speed = 0;
-        } else if (k == COMMAND_TYPE::BACK) {
+        } else if (k == COMMAND_TYPE::BACK || k == COMMAND_TYPE::FOLLOWCAR) {
             auto& tar_pos = std::get<1>(c.getSpecificSingleton<SystemScannedMemory>().value()[param1]).position;
             auto& tar_vel = std::get<1>(c.getSpecificSingleton<SystemScannedMemory>().value()[param1]).velocity;
 
-            const double target_x = tar_pos.x;
-            const double target_y = tar_pos.y;
-            const double target_z = -tar_pos.z; // 无人机目标高度
+            double target_x = tar_pos.x;
+            double target_y = tar_pos.y;
+            double target_z = -tar_pos.z; // 无人机目标高度
+            double offset = 50;
+            if (std::get<1>(c.getSpecificSingleton<SystemScannedMemory>().value()[param1]).baseInfo.side !=
+                    c.getSpecificSingleton<SID>().value() &&
+                flyflag) {
+                target_x -= offset;
+                target_y -= offset;
+
+            }
 
             const auto& cur_pos = c.getSpecificSingleton<Coordinate>().value().position;
             const auto& cur_vel = c.getSpecificSingleton<Hull>().value().velocity;
@@ -129,13 +145,15 @@ void HullSystem::tick(double dt, Components& c) {
                 desired_vy *= scale;
             }
             // 输出给 tickspecific
-            speed = desired_speed;                          // 用于控制油门
-            direction = std::atan2(desired_vy, desired_vx); // 期望速度方向
+            if (flyflag) {
+                speed = desired_speed;                          // 用于控制油门
+                direction = std::atan2(desired_vy, desired_vx); // 期望速度方向
+            }
+            
 
-            height = target_z; // 保持目标高度
-            //if (horizontal_dist < 5.0) {
-            //    height = target_z * (horizontal_dist / 5.0); // 从当前高度缓降到 0
-            //}
+            if (k == COMMAND_TYPE::BACK) {
+                height = target_z; // 保持目标高度
+            } 
             if ((tar_pos - cur_pos).norm() < 3 && (cur_vel - tar_vel).norm() < 3) {
                 flyflag = false;
             }

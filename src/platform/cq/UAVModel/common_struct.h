@@ -77,6 +77,8 @@ class BaseInfo {
 // Vector3
 class Vector3 {
   public:
+    Vector3(double x_val, double y_val, double z_val) : x(x_val), y(y_val), z(z_val) {}
+
     CSValueMap ToValueMap() {
         CSValueMap value;
         value.emplace("x", x);

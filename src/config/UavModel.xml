@@ -26,7 +26,7 @@
 		<Parameter name="scannedInfosize" type="uint64" displayName="探测列表大小收" usage="input" value="" unit=""/>
 
 		<Parameter name="VID" type="uint64" displayName="本机VID,从0开始编号" usage="init,output" value="" unit=""/>
-		<Parameter name="platoonid" type="uint64" displayName="本车所在排号" usage="init" value="" unit=""/>
+		<Parameter name="platoonid" type="uint32" displayName="本车所在排号" usage="init" value="" unit=""/>
 		<Parameter name="baselongitude" type="float64" displayName="基坐标经度" usage="init" value="0" unit=""/>
 		<Parameter name="baselatitude" type="float64" displayName="基坐标纬度" usage="init" value="0" unit=""/>
 		<Parameter name="basealtitude" type="float64" displayName="基坐标高度" usage="init" value="0" unit=""/>

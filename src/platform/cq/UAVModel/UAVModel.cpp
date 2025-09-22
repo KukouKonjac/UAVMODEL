@@ -71,7 +71,7 @@ bool UAVModel::Init(const std::unordered_map<std::string, std::any>& value) {
     tmpself.longitude = std::any_cast<double>(value.find("longitude")->second);
     tmpself.latitude = std::any_cast<double>(value.find("latitude")->second);
     tmpself.altitude = std::any_cast<double>(value.find("altitude")->second);
-    myplatoonid = std::any_cast<uint64_t>(value.find("platoonid")->second);
+    myplatoonid = std::any_cast<uint32_t>(value.find("platoonid")->second);
     location = tmp;
     {
         std::lock_guard<std::mutex> lock(initLock);
@@ -98,6 +98,7 @@ bool UAVModel::Init(const std::unordered_map<std::string, std::any>& value) {
 bool UAVModel::Tick(double time) {
     // time: ms -> s
     model.tick(time / 1000);
+    std::cout << model.components.getSpecificSingleton<uavmodel::VID>().value() << endl;
     auto& buffer = model.components.getSpecificSingleton<uavmodel::EventBuffer>();
     buffer->emplace("VID", getVID());
     EntityInfo info{};

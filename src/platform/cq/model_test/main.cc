@@ -26,6 +26,7 @@
 #include "../csconfig/type_define_info.h"
 #include "../csmodel_base/csmodel_base.h"
 #include "printutil.h"
+#include "../../cq/UAVModel/common_struct.h"
 
 namespace fs = std::filesystem;
 using namespace config;
@@ -37,7 +38,7 @@ typedef void (*DestroyMemoryFun)(void *mem, bool is_array);
 bool SetInitParamsToModel(CSModelObject *);
 
 // 设置模型输入参数
-bool SetInputParamsToModel(CSModelObject *, uint64_t);
+bool SetInputParamsToModel(CSModelObject*, uint64_t, std::unordered_map<std::string, std::any>);
 
 // 获取模型的输出参数
 bool GetOutputParamsFromModel(CSModelObject *, const ModelInfo &, const TypeDefineInfo &);
@@ -106,7 +107,7 @@ int main(int argc, char *argv[]) {
     // 加载模型描述文件
     CSModelInfo model_info_;
     if (!model_info_.ReadFile(
-            "D:/Desktop/FinalProj/Code/CarPhyModel/src/config/CarPhyModel.xml")) {
+            "D:/v2.2.0.0802/resmanager/download/UAVModelv0/UAVModelv0.xml")) {
         std::cout << "模型描述文件解析失败" << std::endl;
         return false;
     }
@@ -114,7 +115,7 @@ int main(int argc, char *argv[]) {
     // 加载数据类型定义文件
     CSTypeDefineInfo type_define_info_;
     if (!type_define_info_.ReadFile(
-            "D:/Desktop/FinalProj/Code/CarPhyModel/src/config/typedefine.xml")) {
+            "D:/GitHubProject/UAVMODEL/src/config/typedefine.xml")) {
         std::cout << "自定义数据类型定义文件解析失败" << std::endl;
         return false;
     }
@@ -127,8 +128,8 @@ int main(int argc, char *argv[]) {
     // #else
     //   std::string lib_path_ = exe_dir_ + "/models/test-model-id/" + lib_name_;
     // #endif
-    std::string lib_path_ = "D:/Desktop/FinalProj/Code/CarPhyModel/bin/";
-    lib_path_ += "CarPhyModel_debug.dll";
+    std::string lib_path_ = "D:/GitHubProject/UAVMODEL/bin/";
+    lib_path_ += "UAVModel.dll";
 
 #ifdef _WIN32
     auto hmodule = LoadLibraryExA(lib_path_.c_str(), NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
@@ -221,16 +222,67 @@ int main(int argc, char *argv[]) {
     if (!SetInitParamsToModel(model_obj_))
         return -1;
 
+    
+
+    int tick = 0;
     // 仿真运行
-    while (1) {
+    while (tick < 10) {
         // 索取模型的输出参数
+        tick++;
         if (!GetOutputParamsFromModel(model_obj_, model_info_.GetInfo(),
                                       type_define_info_.GetInfo())) {
             break;
         }
 
+        
+
+        CSValueMap input_params{
+            {"Command", (uint64_t)1}, 
+            {"Param1", (double)10.}, 
+            {"Param2", (double)10.},
+        };
+        
+
         // 向模型设置输入参数
-        if (!SetInputParamsToModel(model_obj_, current_ticks))
+        if (!SetInputParamsToModel(model_obj_, current_ticks, input_params))
+            break;
+
+        EntityInfo tmp;
+        tmp.baseInfo = {5, 1, 1, 1, 0, 1, 0, 3000.0, 1};
+        tmp.position = {1000, 0, 0};
+        tmp.velocity = {0.0, 0.0, 0.0}; 
+        CSValueMap entityData = tmp.ToValueMap();
+        input_params.emplace("EntityInfo", entityData);
+
+        // 2. 创建至少两个子目标（scannedInfo）
+        std::vector<std::any> scannedInfoList;
+
+        // 子目标 1
+        EntityInfo sub1;
+        sub1.baseInfo = {2, 1, 1, 0, 1, 1, 1, 500.0, 0}; 
+        sub1.position = {1010.0, 50.0, 0.0};
+        sub1.velocity = {10.0, 0.0, 0.0};
+        scannedInfoList.push_back(sub1.ToValueMap());
+
+        // 子目标 2
+        EntityInfo sub2;
+        sub2.baseInfo = {3, 1, 1, 0, 1, 1, 0, 800.0, 0}; 
+        sub2.position = {990.0, -50.0, 0.0};
+        sub2.velocity = {-10.0, 0.0, 0.0};
+        scannedInfoList.push_back(sub2.ToValueMap());
+
+        // 可选：加第三个
+        EntityInfo sub3;
+        sub3.baseInfo = {4, 1, 1, 0, 1, 1, 1, 200.0, 0};
+        sub3.position = {1005.0, 0.0, 10.0};
+        sub3.velocity = {0.0, 5.0, 0.0};
+        scannedInfoList.push_back(sub3.ToValueMap());
+
+        // 3. 写入 scannedInfo 和 size
+        input_params.emplace("scannedInfo", scannedInfoList);            // std::vector<std::any>
+        input_params.emplace("scannedInfosize", scannedInfoList.size()); // size_t → any
+
+        if (!SetInputParamsToModel(model_obj_, current_ticks, input_params))
             break;
 
         // 模型单步运算
@@ -248,6 +300,9 @@ int main(int argc, char *argv[]) {
                   << std::endl;
     }
     destroy_obj_(model_obj_, false);
+    if (model_obj_ == nullptr) {
+        std::cout << "Model Destroyed" << std::endl;
+    }
     std::cout << std::endl << "仿真结束" << std::endl;
 
     return 0;
@@ -260,7 +315,7 @@ bool SetInitParamsToModel(CSModelObject *model_obj_) {
     uint64_t id = 10001;
     uint16_t force_side_id = 1;
     std::string model_id_("test-model-id");
-    std::string instance_name_("CarPhyModel-10001");
+    std::string instance_name_("UAV1001");
 
     // 设置模型初始化参数
 
@@ -271,7 +326,17 @@ bool SetInitParamsToModel(CSModelObject *model_obj_) {
 
     // 初始化参数
     std::unordered_map<std::string, std::any> init_params_{
-        {"filePath", std::string("D:/Desktop/FinalProj/Code/CarPhyModel/src/config/car.xml")}
+        {"filePath", std::string("D:/cqmodel/rule_framework/car.xml")},
+        {"baselongitude", static_cast<double>(0)},
+        {"baselatitude", static_cast<double>(0)},
+        {"basealtitude", static_cast<double>(0)},
+        {"VID", static_cast<uint64_t>(100)},
+        {"baselatitude", static_cast<double>(0)},
+        {"longitude", static_cast<double>(0)},
+        {"latitude", static_cast<double>(0)},
+        {"altitude", static_cast<double>(0)},
+        {"platoonid", static_cast<uint64_t>(1)},
+        {"demfilepath", std::string("D:/cqmodel/zjc_wsb_demo1.tif")},
     };
 
     // TODO! (需根据模型进行更新) 设置模型初始化参数
@@ -287,13 +352,12 @@ bool SetInitParamsToModel(CSModelObject *model_obj_) {
     return true;
 }
 
+
+
 // TODO! (需根据模型进行更新) 设置模型输入参数
-bool SetInputParamsToModel(CSModelObject *model_obj_, uint64_t current_ticks) {
-    std::unordered_map<std::string, std::any> input_params{
-        {"Command", (uint64_t)1},
-        {"Param1", (double)10.},
-        {"Param2", (double)10.}
-    };
+bool SetInputParamsToModel(CSModelObject* model_obj_, uint64_t current_ticks,
+                           std::unordered_map<std::string, std::any> input_params) {
+
     if (!model_obj_->SetInput(input_params)) {
         std::cerr << "设置模型输入参数失败" << std::endl;
         return false;

@@ -12,11 +12,11 @@
 #include "test11.hpp"
 #include "test12.hpp"
 #include "test13.hpp"
-
+#include "../src/model/environment/wsf.hpp"
 #include "testreadtif.hpp"
 
 int main(){
-    wsfplugin::testmain();
+    /*wsfplugin::testmain();*/
     //test01::test_main();
     //test02::test_main();
     //test03::test_main();

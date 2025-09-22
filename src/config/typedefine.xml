@@ -12,6 +12,11 @@
 			<Param name="side" type="uint16" unit=""/>
 			<Param name="type" type="uint16" unit=""/>
 			<Param name="damageLevel" type="uint16" unit=""/>
+      <Param name="jammer" type="float64" unit=""/>
+      <Param name="hidden" type="float64" unit=""/>
+      <Param name="active_interference_rate" type="float64" unit=""/>
+      <Param name="active_interference_distance" type="float64" unit=""/>
+      <Param name="platoonid" type="uint64" unit=""/>
 		</Params>
 	</Type>
 	<Type name="EntityInfo">
@@ -56,6 +61,11 @@
 			<Param name="range" type="float64" unit=""/>
 			<Param name="position" type="Vector3" unit=""/>
 			<Param name="target" type="Vector3" unit=""/>
+      <Param name="velocity" type="Vector3" unit=""/>
+      <Param name="weaponName" type="string" unit=""/>
+      <Param name="isFirst" type="float64" unit=""/>
+      <Param name="param1" type="float64" unit=""/>
+      <Param name="param2" type="float64" unit=""/>
 		</Params>
 	</Type>
 	<Type name="CSVector2D">
